@@ -166,3 +166,77 @@ body {
 #urlHelp {
     font-size: 0.8rem;
 }
+
+/* --- Fullscreen Processing Overlay --- */
+#processing-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(10, 25, 47, 0.85); /* Dunkelblauer, transparenter Hintergrund */
+    backdrop-filter: blur(5px); /* Hintergrund unscharf machen */
+    -webkit-backdrop-filter: blur(5px); /* Für Safari-Kompatibilität */
+    z-index: 2000; /* Über allem anderen */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: #64ffda; /* Cyan/Türkis für den Text */
+    font-family: 'Courier New', Courier, monospace;
+    text-align: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+
+#processing-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+#processing-overlay img {
+    max-width: 90%;
+    width: 350px;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 0 25px rgba(100, 255, 218, 0.5); /* Passender Leuchteffekt */
+    margin-bottom: 20px;
+}
+
+#processing-overlay #overlay-message {
+    font-size: 1.5rem;
+    text-shadow: 0 0 10px #64ffda; /* Leuchteffekt für Text */
+    padding: 0 20px;
+    margin-bottom: 25px; /* Mehr Abstand nach unten */
+}
+
+/* NEU: Stile für den Status-Container im Overlay */
+.overlay-status-container {
+    width: 80%;
+    max-width: 600px;
+}
+
+#overlay-status-text {
+    font-size: 1rem;
+    color: #ccd6f6; /* Heller, aber nicht so grell wie die Hauptfarbe */
+    margin-bottom: 10px;
+    min-height: 1.2em; /* Verhindert Springen bei Textänderung */
+    word-wrap: break-word;
+}
+
+/* NEU: Stile für den Fortschrittsbalken im Overlay */
+#processing-overlay .progress {
+    height: 20px;
+    background-color: rgba(100, 255, 218, 0.1); /* Hintergrund des Balkens */
+    border: 1px solid rgba(100, 255, 218, 0.3);
+    border-radius: 5px;
+    padding: 2px;
+}
+
+#processing-overlay .progress-bar {
+    background-color: #64ffda !important; /* Wichtig, um Bootstrap zu überschreiben */
+    color: #0a192f; /* Dunkler Text für Kontrast */
+    font-weight: bold;
+    transition: width 0.3s ease-in-out; /* Weicherer Übergang */
+}
