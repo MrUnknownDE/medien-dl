@@ -1,5 +1,5 @@
-# 1. Basis-Image wählen (Python 3.13 oder neuer empfohlen)
-FROM python:3.13.3-slim
+# 1. Basis-Image wählen
+FROM python:3.13.7-slim
 
 # 2. Metadaten (optional)
 LABEL maintainer="MrUnknownDE"
