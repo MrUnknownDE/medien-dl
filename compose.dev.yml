@@ -1,0 +1,19 @@
+services:
+  web:
+    build: . # Baut das Image, falls es nicht existiert (z.B. für Dependencies)
+    container_name: medien-dl-dev
+    ports:
+      - "5000:5000"
+    volumes:
+      # WICHTIG: Mountet den gesamten aktuellen Ordner in das /app Verzeichnis im Container.
+      # Code-Änderungen auf dem Host sind sofort im Container sichtbar.
+      - .:/app
+      # Die Daten-Volumes bleiben gleich, um persistent zu sein.
+      - ./data/download_history.json:/app/download_history.json
+      - ./data/stats.json:/app/stats.json
+      - ./data/sc_downloads:/app/sc_downloads
+    env_file:
+      - .env
+    # Überschreibt den CMD-Befehl aus dem Dockerfile, um den Flask-Entwicklungsserver zu nutzen.
+    # Dieser startet bei Code-Änderungen automatisch neu (Hot-Reloading).
+    command: flask run --host=0.0.0.0 --port=5000

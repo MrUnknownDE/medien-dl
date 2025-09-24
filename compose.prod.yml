@@ -1,0 +1,14 @@
+services:
+  web:
+    image: ghcr.io/mrunknownde/medien-dl:main
+    container_name: medien-dl-prod
+    ports:
+      - "5000:5000"
+    volumes:
+      # Nur die persistenten Daten werden gemountet. KEIN Quellcode!
+      - ./data/download_history.json:/app/download_history.json
+      - ./data/stats.json:/app/stats.json
+      - ./data/sc_downloads:/app/sc_downloads
+    env_file:
+      - .env
+    restart: unless-stopped # Stellt sicher, dass der Container bei Fehlern oder nach einem Neustart wieder hochfährt.
