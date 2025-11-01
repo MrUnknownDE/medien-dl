@@ -5,6 +5,12 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      extra_tag:
+        description: "Optionaler Zusatz-Tag (z.B. v1.2.3). Kommt zusätzlich zu :latest und :<sha>."
+        required: false
+        default: ""
 
 jobs:
   build-and-push:
