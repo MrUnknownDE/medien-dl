@@ -2,171 +2,199 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>unknownMedien.dl - Smart Downloader</title>
+    <title>unknownMedien.dl</title>
     
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 
-    <!-- Terminal-ähnlicher Hintergrundeffekt -->
-    <div class="terminal-backdrop">
-        <div class="terminal-line" id="terminal-line-1"></div>
-        <div class="terminal-line" id="terminal-line-2"></div>
-        <div class="terminal-line" id="terminal-line-3"></div>
-    </div>
+    <!-- Animated Background -->
+    <div class="bg-gradient-animate"></div>
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
 
-    <div class="container d-flex flex-column min-vh-100 justify-content-center align-items-center position-relative z-1 p-3">
+    <!-- Header / Nav -->
+    <nav class="navbar fixed-top w-100 p-4 d-flex justify-content-between align-items-center z-3">
+        <div class="brand fw-bold text-white fs-4 tracking-wide">
+            unknownMedien<span class="text-primary-light">.dl</span>
+        </div>
+        <button class="btn btn-glass-icon" data-bs-toggle="modal" data-bs-target="#historyModal" title="Verlauf">
+            <i class="fas fa-history"></i>
+        </button>
+    </nav>
+
+    <!-- Main Content (Hero) -->
+    <main class="container-fluid min-vh-100 d-flex flex-column justify-content-center align-items-center position-relative z-2">
         
-        <!-- Main Content Card -->
-        <div class="cli-card text-center fade-in-up">
-            <h1 class="display-4 fw-bold mb-2 text-shadow logo-text">unknownMedien.dl</h1>
-            <p class="text-muted mb-4 lead">Der schnelle Weg zu deinen Medien.</p>
+        <div class="hero-wrapper w-100 text-center">
+            
+            <!-- Headline -->
+            <h1 class="hero-title mb-3 fade-in">Media Downloader</h1>
+            <p class="hero-subtitle text-white-50 mb-5 fade-in delay-1">
+                Einfach Link einfügen. Wir übernehmen den Rest.
+            </p>
 
-            <form id="upload-form">
-                <input type="hidden" name="platform" id="input-platform" value="SoundCloud">
+            <!-- Form Area -->
+            <div class="form-container fade-in delay-2">
+                <form id="upload-form">
+                    <input type="hidden" name="platform" id="input-platform" value="SoundCloud">
 
-                <div class="input-group input-group-lg shadow-sm mb-3 cli-input-group">
-                    <span class="input-group-text bg-transparent border-0 text-success ps-4"><i class="fas fa-keyboard"></i></span>
-                    <input type="url" class="form-control bg-transparent border-0 cli-input" id="url" name="url" required placeholder="Link hier einfügen..." autocomplete="off">
-                    <button class="btn btn-success cli-button px-4 fw-bold" type="submit" id="submit-button">
-                        <i class="fas fa-terminal"></i> EXEC
-                    </button>
-                </div>
+                    <!-- Main Input -->
+                    <div class="glass-input-wrapper d-flex align-items-center shadow-lg">
+                        <div class="icon-zone ps-4 text-white-50">
+                            <i class="fas fa-link" id="url-icon"></i>
+                        </div>
+                        <input type="url" class="form-control bg-transparent border-0 text-white p-4 fs-5" 
+                               id="url" name="url" required placeholder="https://..." autocomplete="off">
+                        <button class="btn btn-action p-4 fw-bold text-uppercase" type="submit" id="submit-button">
+                            Start <i class="fas fa-arrow-right ms-2"></i>
+                        </button>
+                    </div>
 
-                <!-- Detected Platform Badge (CLI Style) -->
-                <div id="platform-badge-container" class="mb-3 p-2 cli-output-line" style="height: 30px; opacity: 0; transition: all 0.3s ease;">
-                    <span class="badge rounded-pill bg-transparent cli-badge border px-3 py-2">
-                        <i id="detected-icon" class="fas fa-question-circle me-1 cli-icon"></i>
-                        <span id="detected-text">SCANNING...</span>
-                    </span>
-                </div>
-
-                <!-- Options Container -->
-                <div id="options-container" class="options-wrapper cli-card-body-overlay">
-                    <div class="card card-body border-0 shadow-sm cli-card-inner p-3 mt-2">
+                    <!-- Detected Platform & Options Slide-Down -->
+                    <div id="detection-area" class="mt-4 transition-all" style="opacity: 0; transform: translateY(-10px);">
                         
-                        <div id="youtube-options" class="d-none animate-options mb-3 pb-3 border-bottom cli-section">
-                            <h6 class="fw-bold text-uppercase small text-success mb-2"><i class="fab fa-youtube text-danger me-1"></i> YOUTUBE CONFIG</h6>
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label small fw-bold text-info">FORMAT</label>
-                                    <div class="btn-group w-100" role="group">
-                                        <input type="radio" class="btn-check" name="yt_format" id="format-mp3" value="mp3" checked>
-                                        <label class="btn btn-outline-success btn-sm" for="format-mp3">AUDIO</label>
-                                        <input type="radio" class="btn-check" name="yt_format" id="format-mp4" value="mp4">
-                                        <label class="btn btn-outline-success btn-sm" for="format-mp4">VIDEO</label>
+                        <!-- Badge -->
+                        <span class="badge glass-badge px-3 py-2 rounded-pill mb-3">
+                            <i id="detected-icon" class="fas fa-check me-2"></i>
+                            <span id="detected-text">SoundCloud erkannt</span>
+                        </span>
+
+                        <!-- Dynamic Options -->
+                        <div id="options-container" class="options-drawer mx-auto text-start text-white">
+                            
+                            <!-- YouTube Options -->
+                            <div id="youtube-options" class="d-none option-group">
+                                <div class="row g-4 justify-content-center">
+                                    <div class="col-auto">
+                                        <label class="text-white-50 small text-uppercase fw-bold mb-2 d-block">Format</label>
+                                        <div class="switch-toggle">
+                                            <input type="radio" name="yt_format" id="format-mp3" value="mp3" checked>
+                                            <label for="format-mp3">MP3</label>
+                                            <input type="radio" name="yt_format" id="format-mp4" value="mp4">
+                                            <label for="format-mp4">MP4</label>
+                                            <div class="toggle-bg"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto" id="quality-wrapper">
+                                        <label class="text-white-50 small text-uppercase fw-bold mb-2 d-block">Qualität</label>
+                                        <select class="form-select glass-select" id="mp3_bitrate" name="mp3_bitrate">
+                                            <option>Best</option><option selected>192k</option><option>128k</option>
+                                        </select>
+                                        <select class="form-select glass-select d-none" id="mp4_quality" name="mp4_quality">
+                                            <option selected>Best</option><option>Medium</option><option>Low</option>
+                                        </select>
                                     </div>
                                 </div>
-                                <div class="col-md-6" id="quality-wrapper">
-                                    <label class="form-label small fw-bold text-info">QUALITY</label>
-                                    <select class="form-select form-select-sm cli-select" id="mp3_bitrate" name="mp3_bitrate">
-                                        <option>BEST</option> <option selected>192k</option> <option>128k</option>
-                                    </select>
-                                    <select class="form-select form-select-sm cli-select d-none" id="mp4_quality" name="mp4_quality">
-                                        <option selected>BEST</option> <option>MEDIUM</option> <option>LOW</option>
-                                    </select>
-                                </div>
                             </div>
-                        </div>
 
-                        <div id="codec-options-section" class="d-none animate-options cli-section">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <label class="form-label small fw-bold text-info mb-0">COMPATIBILITY MODE</label>
-                                    <div class="text-muted extra-small">H.264 (for max compatibility)</div>
-                                </div>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" role="switch" id="codec-switch">
-                                    <input type="hidden" name="codec_preference" id="codec_preference" value="original">
+                            <!-- Codec Options -->
+                            <div id="codec-options-section" class="d-none option-group mt-3 text-center">
+                                <div class="d-inline-flex align-items-center glass-panel px-3 py-2 rounded">
+                                    <span class="text-white-50 small me-3">Kompatibilität (H.264)</span>
+                                    <div class="form-check form-switch m-0">
+                                        <input class="form-check-input custom-switch" type="checkbox" role="switch" id="codec-switch">
+                                        <input type="hidden" name="codec_preference" id="codec_preference" value="original">
+                                    </div>
                                 </div>
                             </div>
+
                         </div>
                     </div>
+
+                    <!-- Error Alert -->
+                    <div id="error-message" class="alert glass-alert mt-4 d-none text-danger fw-bold" role="alert"></div>
+                </form>
+            </div>
+
+            <!-- Processing / Terminal View (Hidden initially) -->
+            <div id="process-view" class="d-none w-100 max-w-lg mx-auto mt-5">
+                
+                <!-- Main Status -->
+                <h3 id="status-message" class="text-white fw-bold mb-3 tracking-wide">INITIALISIERUNG...</h3>
+                
+                <!-- Progress Bar -->
+                <div class="progress glass-progress mb-4">
+                    <div id="progress-bar" class="progress-bar bg-primary-gradient" style="width: 0%"></div>
                 </div>
 
-                <!-- Pseudo-Logs Area -->
-                <div id="pseudo-log-area" class="cli-output-box shadow-sm text-start" style="max-height: 250px; opacity: 0;">
-                    <div id="pseudo-log-content"></div>
+                <!-- CLI Log Window -->
+                <div class="terminal-window glass-panel text-start p-3 font-monospace small">
+                    <div class="terminal-header d-flex gap-2 mb-2 opacity-50">
+                        <div class="dot bg-danger"></div>
+                        <div class="dot bg-warning"></div>
+                        <div class="dot bg-success"></div>
+                        <span class="ms-2">worker@unknown-dl:~# process_task</span>
+                    </div>
+                    <div id="pseudo-log-content" class="terminal-body text-primary-light">
+                        <!-- Logs typing here -->
+                    </div>
                 </div>
-
-                <!-- Error Message -->
-                <div id="error-message" class="alert alert-danger mt-3 d-none shadow-sm cli-alert text-start" role="alert"></div>
-            </form>
-
-            <!-- Progress View -->
-            <div id="progress-container" class="d-none mt-4 text-center">
-                <h5 id="status-message" class="fw-bold mb-3 cli-output-line cli-highlight"></h5>
-                <div class="progress cli-progress mb-2">
-                    <div id="progress-bar" class="progress-bar cli-progress-bar" style="width: 0%"></div>
-                </div>
-                <div id="log-content" class="text-muted mt-2 extra-small text-truncate cli-output-line"></div>
             </div>
 
             <!-- Result View -->
-            <div id="result-container" class="d-none mt-4">
-                <div class="success-checkmark mb-3">
-                    <i class="fas fa-check-circle text-success display-4"></i>
+            <div id="result-view" class="d-none mt-5">
+                <div class="result-card glass-panel p-5 d-inline-block rounded-4">
+                    <div class="icon-circle bg-success-soft mb-3 mx-auto">
+                        <i class="fas fa-check text-success fs-2"></i>
+                    </div>
+                    <h2 class="text-white fw-bold mb-1">Fertig!</h2>
+                    <p class="text-white-50 mb-4">Deine Datei steht bereit.</p>
+                    
+                    <a id="result-url" href="#" target="_blank" class="btn btn-primary-glow btn-lg px-5 rounded-pill fw-bold">
+                        <i class="fas fa-download me-2"></i> Herunterladen
+                    </a>
+                    
+                    <div class="mt-4">
+                        <button class="btn btn-link text-white-50 text-decoration-none btn-sm" onclick="location.reload()">
+                            <i class="fas fa-redo me-1"></i> Weitere Datei
+                        </button>
+                    </div>
                 </div>
-                <h4 class="fw-bold">COMPLETE.</h4>
-                <a id="result-url" href="#" target="_blank" class="btn btn-success cli-button btn-lg mt-2 shadow-lg hover-lift">
-                    <i class="fas fa-download me-2"></i> DOWNLOAD
-                </a>
-                <button class="btn btn-link text-muted mt-3 d-block mx-auto" onclick="location.reload()">
-                    NEW SESSION
-                </button>
             </div>
 
         </div>
-
-        <!-- Footer -->
-        <div class="mt-auto py-4 text-center text-muted extra-small opacity-75">
-            &copy; 2025 unknownMedien.dl &bull; Links expire in 7 days.
-        </div>
-
-    </div>
+    </main>
 
     <!-- History Modal -->
     <div class="modal fade" id="historyModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content border-0 shadow-lg cli-modal-content">
-                <div class="modal-header border-0 bg-dark cli-modal-header">
-                    <h5 class="modal-title fw-bold text-success"><i class="fas fa-history me-2"></i>HISTORY</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-content glass-modal border-0">
+                <div class="modal-header border-bottom-white-10">
+                    <h5 class="modal-title text-white fw-bold">Verlauf (Lokal)</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-0">
-                    <div class="table-responsive" style="max-height: 400px;">
-                        <table id="history-table" class="table table-hover mb-0 align-middle cli-table">
-                            <thead class="cli-table-header sticky-top">
-                                <tr>
-                                    <th>TIME</th>
-                                    <th class="text-center">TYPE</th>
-                                    <th>TITLE</th>
-                                    <th class="text-end">ACTION</th>
+                    <div class="table-responsive" style="max-height: 50vh;">
+                        <table class="table table-dark table-hover mb-0 bg-transparent align-middle" id="history-table">
+                            <thead>
+                                <tr class="text-white-50 small text-uppercase">
+                                    <th class="ps-4">Zeit</th>
+                                    <th class="text-center">Typ</th>
+                                    <th>Titel</th>
+                                    <th class="text-end pe-4">Link</th>
                                 </tr>
                             </thead>
-                            <tbody class="border-top-0">
-                                <!-- JS fills this -->
+                            <tbody>
+                                <!-- JS Fills this -->
                             </tbody>
                         </table>
                     </div>
                 </div>
-                <div class="modal-footer border-0 bg-dark cli-modal-footer">
-                    <button id="clear-history-button" class="btn btn-outline-danger btn-sm">CLEAR ALL</button>
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">CLOSE</button>
+                <div class="modal-footer border-top-white-10 justify-content-between">
+                    <button id="clear-history-button" class="btn btn-outline-danger btn-sm rounded-pill">Alle löschen</button>
+                    <small class="text-white-50">Gespeichert im Browser für 7 Tage</small>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Context Menu -->
-    <ul id="context-menu" class="context-menu list-group position-absolute d-none shadow-lg cli-context-menu">
-        <li class="list-group-item list-group-item-action py-2 px-3" data-action="copy"><i class="fas fa-copy me-2"></i>Copy Link</li>
-    </ul>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
