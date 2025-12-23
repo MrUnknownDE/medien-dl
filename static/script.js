@@ -235,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function loadHistory() {
         const raw = localStorage.getItem('mdl_history');
         if(!raw) {
-            dom.historyTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-white-50 py-3">Kein Verlauf vorhanden</td></tr>';
+            dom.historyTableBody.innerHTML = '<tr><td colspan="5" class="text-center text-white-50 py-3">Kein Verlauf vorhanden</td></tr>';
             return;
         }
         
@@ -258,10 +258,15 @@ document.addEventListener('DOMContentLoaded', () => {
             tr.innerHTML = `
                 <td class="ps-4 text-white-50 small font-monospace">${time}</td>
                 <td class="text-center text-primary-light small">${item.platform}</td>
-                <td class="text-truncate" style="max-width: 150px;">${item.title || 'Unbekannt'}</td>
+                <td class="text-truncate" style="max-width: 150px;" title="${item.title}">${item.title || 'Unbekannt'}</td>
+                <td class="text-center">
+                    <a href="${item.source}" target="_blank" class="text-white-50" title="Quelle öffnen: ${item.source}">
+                        <i class="fas fa-link"></i>
+                    </a>
+                </td>
                 <td class="text-end pe-4">
-                    <a href="${item.url}" target="_blank" class="text-primary-light">
-                        <i class="fas fa-external-link-alt"></i>
+                    <a href="${item.url}" target="_blank" class="text-primary-light" title="Download">
+                        <i class="fas fa-download"></i>
                     </a>
                 </td>
             `;
@@ -269,18 +274,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function saveHistory(url) {
+    function saveHistory(resultUrl) {
         const pf = dom.platformInput.value;
+        const sourceUrl = dom.urlInput.value; // Hole die Original-URL aus dem Input
+        
         const entry = {
-            url: url,
+            url: resultUrl,       // Der fertige S3 Download Link
+            source: sourceUrl,    // Der ursprüngliche YouTube/etc Link
             platform: pf,
-            title: pf + " Download", // Could be improved if backend sent title
+            title: pf + " Download", // (Backend sendet Titel aktuell nicht im finalen Status, daher generisch)
             ts: Date.now()
         };
         
         let data = JSON.parse(localStorage.getItem('mdl_history') || '[]');
         data.unshift(entry);
-        if(data.length > 20) data.pop();
+        if(data.length > 20) data.pop(); // Max 20 Einträge
         localStorage.setItem('mdl_history', JSON.stringify(data));
         loadHistory();
     }
