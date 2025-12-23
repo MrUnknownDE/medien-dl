@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (detected) {
             dom.platformInput.value = detected.name;
-            dom.detectedText.textContent = detected.name + " erkannt";
+            dom.detectedText.textContent = detected.name + " detected";
             dom.detectedIcon.className = `fab ${detected.icon}`;
             dom.detectionArea.style.opacity = '1';
             dom.detectionArea.style.transform = 'translateY(0)';
@@ -156,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentJobId = data.job_id;
                 startPolling();
             } else {
-                throw new Error(data.error || "Start fehlgeschlagen");
+                throw new Error(data.error || "Start failed");
             }
         } catch (err) {
             showError(err.message);
@@ -168,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 if(!currentJobId) return;
                 const res = await fetch(`/status?job_id=${currentJobId}`);
-                if (res.status === 404) { showError("Job nicht gefunden"); return; }
+                if (res.status === 404) { showError("Job not found"); return; }
                 
                 const status = await res.json();
                 
@@ -235,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function loadHistory() {
         const raw = localStorage.getItem('mdl_history');
         if(!raw) {
-            dom.historyTableBody.innerHTML = '<tr><td colspan="5" class="text-center text-white-50 py-3">Kein Verlauf vorhanden</td></tr>';
+            dom.historyTableBody.innerHTML = '<tr><td colspan="5" class="text-center text-white-50 py-3">No history available</td></tr>';
             return;
         }
         
@@ -258,9 +258,9 @@ document.addEventListener('DOMContentLoaded', () => {
             tr.innerHTML = `
                 <td class="ps-4 text-white-50 small font-monospace">${time}</td>
                 <td class="text-center text-primary-light small">${item.platform}</td>
-                <td class="text-truncate" style="max-width: 150px;" title="${item.title}">${item.title || 'Unbekannt'}</td>
+                <td class="text-truncate" style="max-width: 150px;">${item.title || 'Unknown'}</td>
                 <td class="text-center">
-                    <a href="${item.source}" target="_blank" class="text-white-50" title="Quelle öffnen: ${item.source}">
+                    <a href="${item.source}" target="_blank" class="text-white-50" title="Open source: ${item.source}">
                         <i class="fas fa-link"></i>
                     </a>
                 </td>
@@ -276,25 +276,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function saveHistory(resultUrl) {
         const pf = dom.platformInput.value;
-        const sourceUrl = dom.urlInput.value; // Hole die Original-URL aus dem Input
+        const sourceUrl = dom.urlInput.value; // Capture source URL
         
         const entry = {
-            url: resultUrl,       // Der fertige S3 Download Link
-            source: sourceUrl,    // Der ursprüngliche YouTube/etc Link
+            url: resultUrl,       
+            source: sourceUrl,    
             platform: pf,
-            title: pf + " Download", // (Backend sendet Titel aktuell nicht im finalen Status, daher generisch)
+            title: pf + " Download", 
             ts: Date.now()
         };
         
         let data = JSON.parse(localStorage.getItem('mdl_history') || '[]');
         data.unshift(entry);
-        if(data.length > 20) data.pop(); // Max 20 Einträge
+        if(data.length > 20) data.pop(); // Max 20 entries
         localStorage.setItem('mdl_history', JSON.stringify(data));
         loadHistory();
     }
 
     function clearHistory() {
-        if(confirm("Verlauf wirklich löschen?")) {
+        if(confirm("Really clear history?")) {
             localStorage.removeItem('mdl_history');
             loadHistory();
         }

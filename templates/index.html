@@ -1,4 +1,4 @@
-<html lang="de">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -25,7 +25,7 @@
         <div class="brand fw-bold text-white fs-4 tracking-wide">
             unknownMedien<span class="text-primary-light">.dl</span>
         </div>
-        <button class="btn btn-glass-icon" data-bs-toggle="modal" data-bs-target="#historyModal" title="Verlauf">
+        <button class="btn btn-glass-icon" data-bs-toggle="modal" data-bs-target="#historyModal" title="History">
             <i class="fas fa-history"></i>
         </button>
     </nav>
@@ -38,7 +38,7 @@
             <!-- Headline -->
             <h1 class="hero-title mb-3 fade-in">Media Downloader</h1>
             <p class="hero-subtitle text-white-50 mb-5 fade-in delay-1">
-                Einfach Link einfügen. Wir übernehmen den Rest.
+                Simply paste your link. We handle the rest.
             </p>
 
             <!-- Form Area -->
@@ -64,7 +64,7 @@
                         <!-- Badge -->
                         <span class="badge glass-badge px-3 py-2 rounded-pill mb-3">
                             <i id="detected-icon" class="fas fa-check me-2"></i>
-                            <span id="detected-text">SoundCloud erkannt</span>
+                            <span id="detected-text">SoundCloud detected</span>
                         </span>
 
                         <!-- Dynamic Options -->
@@ -84,7 +84,7 @@
                                         </div>
                                     </div>
                                     <div class="col-auto" id="quality-wrapper">
-                                        <label class="text-white-50 small text-uppercase fw-bold mb-2 d-block">Qualität</label>
+                                        <label class="text-white-50 small text-uppercase fw-bold mb-2 d-block">Quality</label>
                                         <select class="form-select glass-select" id="mp3_bitrate" name="mp3_bitrate">
                                             <option>Best</option><option selected>192k</option><option>128k</option>
                                         </select>
@@ -98,7 +98,7 @@
                             <!-- Codec Options -->
                             <div id="codec-options-section" class="d-none option-group mt-3 text-center">
                                 <div class="d-inline-flex align-items-center glass-panel px-3 py-2 rounded">
-                                    <span class="text-white-50 small me-3">Kompatibilität (H.264)</span>
+                                    <span class="text-white-50 small me-3">Compatibility (H.264)</span>
                                     <div class="form-check form-switch m-0">
                                         <input class="form-check-input custom-switch" type="checkbox" role="switch" id="codec-switch">
                                         <input type="hidden" name="codec_preference" id="codec_preference" value="original">
@@ -118,7 +118,7 @@
             <div id="process-view" class="d-none w-100 max-w-lg mx-auto mt-5">
                 
                 <!-- Main Status -->
-                <h3 id="status-message" class="text-white fw-bold mb-3 tracking-wide">INITIALISIERUNG...</h3>
+                <h3 id="status-message" class="text-white fw-bold mb-3 tracking-wide">INITIALIZING...</h3>
                 
                 <!-- Progress Bar -->
                 <div class="progress glass-progress mb-4">
@@ -145,16 +145,16 @@
                     <div class="icon-circle bg-success-soft mb-3 mx-auto">
                         <i class="fas fa-check text-success fs-2"></i>
                     </div>
-                    <h2 class="text-white fw-bold mb-1">Fertig!</h2>
-                    <p class="text-white-50 mb-4">Deine Datei steht bereit.</p>
+                    <h2 class="text-white fw-bold mb-1">Done!</h2>
+                    <p class="text-white-50 mb-4">Your file is ready.</p>
                     
                     <a id="result-url" href="#" target="_blank" class="btn btn-primary-glow btn-lg px-5 rounded-pill fw-bold">
-                        <i class="fas fa-download me-2"></i> Herunterladen
+                        <i class="fas fa-download me-2"></i> Download
                     </a>
                     
                     <div class="mt-4">
                         <button class="btn btn-link text-white-50 text-decoration-none btn-sm" onclick="location.reload()">
-                            <i class="fas fa-redo me-1"></i> Weitere Datei
+                            <i class="fas fa-redo me-1"></i> Convert another
                         </button>
                     </div>
                 </div>
@@ -168,7 +168,7 @@
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content glass-modal border-0">
                 <div class="modal-header border-bottom-white-10">
-                    <h5 class="modal-title text-white fw-bold">Verlauf (Lokal)</h5>
+                    <h5 class="modal-title text-white fw-bold">History (Local)</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-0">
@@ -176,10 +176,10 @@
                         <table class="table table-dark table-hover mb-0 bg-transparent align-middle" id="history-table">
                             <thead>
                                 <tr class="text-white-50 small text-uppercase">
-                                    <th class="ps-4">Zeit</th>
-                                    <th class="text-center">Typ</th>
-                                    <th>Titel</th>
-                                    <th class="text-center">Quelle</th> <!-- NEU: Quelle Spalte -->
+                                    <th class="ps-4">Time</th>
+                                    <th class="text-center">Type</th>
+                                    <th>Title</th>
+                                    <th class="text-center">Source</th>
                                     <th class="text-end pe-4">Download</th>
                                 </tr>
                             </thead>
@@ -190,8 +190,8 @@
                     </div>
                 </div>
                 <div class="modal-footer border-top-white-10 justify-content-between">
-                    <button id="clear-history-button" class="btn btn-outline-danger btn-sm rounded-pill">Alle löschen</button>
-                    <small class="text-white-50">Gespeichert im Browser für 7 Tage</small>
+                    <button id="clear-history-button" class="btn btn-outline-danger btn-sm rounded-pill">Clear all</button>
+                    <small class="text-white-50">Saved in browser for 7 days</small>
                 </div>
             </div>
         </div>
