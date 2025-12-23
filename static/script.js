@@ -1,51 +1,55 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Selektoren ---
     const dom = {
         form: document.getElementById('upload-form'),
         urlInput: document.getElementById('url'),
         platformInput: document.getElementById('input-platform'),
         submitBtn: document.getElementById('submit-button'),
         
-        // Detection Feedback
         badgeContainer: document.getElementById('platform-badge-container'),
         detectedIcon: document.getElementById('detected-icon'),
         detectedText: document.getElementById('detected-text'),
         urlIcon: document.getElementById('url-icon'),
 
-        // Options
         optionsContainer: document.getElementById('options-container'),
         ytOptions: document.getElementById('youtube-options'),
         codecSection: document.getElementById('codec-options-section'),
         
-        // YouTube Specifics
         ytFormatRadios: document.querySelectorAll('input[name="yt_format"]'),
         qualityWrapper: document.getElementById('quality-wrapper'),
         mp3Select: document.getElementById('mp3_bitrate'),
         mp4Select: document.getElementById('mp4_quality'),
         
-        // Codec Switch
         codecSwitch: document.getElementById('codec-switch'),
         codecPreference: document.getElementById('codec_preference'),
 
-        // Progress & Result
         progressContainer: document.getElementById('progress-container'),
         progressBar: document.getElementById('progress-bar'),
         statusMessage: document.getElementById('status-message'),
-        logContent: document.getElementById('log-content'),
+        logContent: document.getElementById('log-content'), // Für den letzten Log-Eintrag
+        
         resultContainer: document.getElementById('result-container'),
         resultUrl: document.getElementById('result-url'),
         errorMessage: document.getElementById('error-message'),
 
-        // History
+        // History Elements
         historyTableBody: document.querySelector('#history-table tbody'),
         clearHistoryBtn: document.getElementById('clear-history-button'),
-        contextMenu: document.getElementById('context-menu')
+        contextMenu: document.getElementById('context-menu'),
+        
+        // Pseudo Log Elements
+        pseudoLogArea: document.getElementById('pseudo-log-area'),
+        pseudoLogContent: document.getElementById('pseudo-log-content'),
+        terminalLines: document.querySelectorAll('.terminal-line')
     };
 
     let currentJobId = null;
     let pollingInterval = null;
+    let pseudoLogInterval = null;
+    let pseudoLogLines = [];
+    const LOG_ENTRY_DELAY = 80; // Millisekunden zwischen Buchstaben
+    const PSEUDO_LOG_MAX_LINES = 10;
+    const HISTORY_EXPIRY_DAYS = 7;
 
-    // --- Plattform Definitionen (Regex & Farben) ---
     const platforms = [
         { name: 'SoundCloud', pattern: /soundcloud\.com/, icon: 'fa-soundcloud', color: '#ff5500' },
         { name: 'YouTube', pattern: /(youtube\.com|youtu\.be)/, icon: 'fa-youtube', color: '#ff0000' },
@@ -54,33 +58,41 @@ document.addEventListener('DOMContentLoaded', () => {
         { name: 'Twitter', pattern: /(twitter\.com|x\.com)/, icon: 'fa-x-twitter', color: '#000000' }
     ];
 
-    // --- Init ---
+    const pseudoLogCommands = [
+        "Initializing environment...",
+        "Connecting to media servers...",
+        "Authenticating with unknownMedien.dl API...",
+        "Scanning URL for media info...",
+        "Detecting stream type...",
+        "Negotiating download protocol...",
+        "Allocating buffer space...",
+        "Pre-compiling conversion modules...",
+        "Establishing S3 connection...",
+        "Generating secure download token...",
+        "Preparing download stream...",
+        "Initiating download sequence...",
+        "Syncing metadata...",
+        "Finalizing file handles...",
+    ];
+
+    // --- Initialisierung ---
     function init() {
         setupEventListeners();
-        loadHistory();
+        loadClientHistory();
+        startPseudoLogging();
     }
 
+    // --- Event Listeners ---
     function setupEventListeners() {
-        // Auto-Detect bei Eingabe
         dom.urlInput.addEventListener('input', handleUrlInput);
-        
-        // Form Submit
         dom.form.addEventListener('submit', handleFormSubmit);
-
-        // YouTube Format Toggle (MP3/MP4)
-        dom.ytFormatRadios.forEach(radio => {
-            radio.addEventListener('change', updateYtQualityVisibility);
-        });
-
-        // Codec Switch Toggle
+        dom.ytFormatRadios.forEach(radio => radio.addEventListener('change', updateYtQualityVisibility));
         if(dom.codecSwitch) {
             dom.codecSwitch.addEventListener('change', (e) => {
                 dom.codecPreference.value = e.target.checked ? 'h264' : 'original';
             });
         }
-
-        // History
-        if(dom.clearHistoryBtn) dom.clearHistoryBtn.addEventListener('click', clearHistory);
+        if(dom.clearHistoryBtn) dom.clearHistoryBtn.addEventListener('click', clearClientHistory);
         document.addEventListener('click', hideContextMenu);
         if(dom.historyTableBody) {
              dom.historyTableBody.addEventListener('contextmenu', handleHistoryRightClick);
@@ -88,29 +100,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- Logik: URL Erkennung ---
+    // --- URL Erkennung & Optionen ---
     function handleUrlInput() {
         const url = dom.urlInput.value.trim();
         const detected = platforms.find(p => p.pattern.test(url));
 
         if (detected) {
-            // UI Feedback
             dom.platformInput.value = detected.name;
-            dom.detectedText.textContent = `${detected.name} erkannt`;
-            dom.detectedIcon.className = `fab ${detected.icon}`;
+            dom.detectedText.textContent = `${detected.name} DETECTED`;
+            dom.detectedIcon.className = `fas ${detected.icon}`;
             dom.detectedIcon.style.color = detected.color;
             dom.badgeContainer.style.opacity = '1';
-            
-            // Icon im Input Feld färben
-            dom.urlIcon.className = `fab ${detected.icon}`;
+            dom.urlIcon.className = `fas ${detected.icon}`;
             dom.urlIcon.style.color = detected.color;
-
-            // Optionen anzeigen
             showOptionsForPlatform(detected.name);
         } else {
-            // Reset wenn unbekannt oder leer
             dom.badgeContainer.style.opacity = '0';
-            dom.urlIcon.className = 'fas fa-link text-muted';
+            dom.urlIcon.className = 'fas fa-keyboard'; // Default CLI icon
             dom.urlIcon.style.color = '';
             hideAllOptions();
         }
@@ -118,17 +124,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function showOptionsForPlatform(platformName) {
         dom.optionsContainer.classList.add('show');
-        
-        // Reset specific sections
         dom.ytOptions.classList.add('d-none');
         dom.codecSection.classList.add('d-none');
 
         if (platformName === 'YouTube') {
             dom.ytOptions.classList.remove('d-none');
+            updateYtQualityVisibility(); // Initial call
         } else if (['TikTok', 'Instagram', 'Twitter'].includes(platformName)) {
             dom.codecSection.classList.remove('d-none');
         } else {
-            // SoundCloud braucht keine extra Optionen in diesem Design (Default ist MP3 Best)
             dom.optionsContainer.classList.remove('show');
         }
     }
@@ -138,38 +142,85 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             dom.ytOptions.classList.add('d-none');
             dom.codecSection.classList.add('d-none');
-        }, 500); // Warten bis Animation fertig
+        }, 500);
     }
 
     function updateYtQualityVisibility() {
-        const format = document.querySelector('input[name="yt_format"]:checked').value;
+        const format = document.querySelector('input[name="yt_format"]:checked')?.value;
+        if (!format) return;
+        
         if (format === 'mp3') {
             dom.mp3Select.classList.remove('d-none');
             dom.mp4Select.classList.add('d-none');
             dom.codecSection.classList.add('d-none');
-        } else {
+        } else { // mp4
             dom.mp3Select.classList.add('d-none');
             dom.mp4Select.classList.remove('d-none');
             dom.codecSection.classList.remove('d-none');
         }
     }
 
-    // --- Logik: Submit & Polling ---
+    // --- Pseudo Logging Animation ---
+    function startPseudoLogging() {
+        let currentLine = 0;
+        let charIndex = 0;
+        let commandIndex = 0;
+        
+        function displayNextLogLine() {
+            if (pseudoLogInterval) clearInterval(pseudoLogInterval);
+            if (commandIndex >= pseudoLogCommands.length) {
+                pseudoLogInterval = setTimeout(startPseudoLogging, 15000); // Restart after delay
+                return;
+            }
+            
+            const command = pseudoLogCommands[commandIndex];
+            const lineElement = document.createElement('div');
+            lineElement.classList.add('cli-output-line');
+            lineElement.style.opacity = '0'; // Start hidden
+            dom.pseudoLogContent.appendChild(lineElement);
+
+            charIndex = 0;
+            function typeWriter() {
+                if (charIndex < command.length) {
+                    lineElement.textContent += command.charAt(charIndex);
+                    charIndex++;
+                    setTimeout(typeWriter, LOG_ENTRY_DELAY);
+                } else {
+                    // Fade in effect for the completed line
+                    let fadeEffect = setInterval(() => {
+                        if (parseFloat(lineElement.style.opacity) < 1) {
+                            lineElement.style.opacity = (parseFloat(lineElement.style.opacity) + 0.1).toString();
+                        } else {
+                            clearInterval(fadeEffect);
+                            // Add new line after a short pause
+                            commandIndex++;
+                            setTimeout(displayNextLogLine, 300); 
+                        }
+                    }, 50);
+                    
+                    // Scroll to bottom
+                    dom.pseudoLogArea.scrollTop = dom.pseudoLogArea.scrollHeight;
+                }
+            }
+            typeWriter();
+        }
+        
+        // Start the logging process
+        dom.pseudoLogArea.style.opacity = '1'; // Make log area visible
+        displayNextLogLine();
+    }
+
+    // --- Form Submit & Progress ---
     async function handleFormSubmit(e) {
         e.preventDefault();
-        
-        // Validierung
-        if(dom.badgeContainer.style.opacity === '0' && dom.urlInput.value.length > 0) {
-            // Fallback für unbekannte URLs -> Standard SoundCloud probieren oder Warnen
-            dom.platformInput.value = "SoundCloud"; 
-        }
+        stopPseudoLogging(); // Stop the fake logs
 
-        // UI Transition
+        // Transition to Progress State
         dom.form.classList.add('d-none');
         dom.progressContainer.classList.remove('d-none');
         dom.resultContainer.classList.add('d-none');
         dom.errorMessage.classList.add('d-none');
-        dom.logContent.textContent = "Verbindung wird hergestellt...";
+        dom.logContent.textContent = "INITIALIZING...";
         dom.progressBar.style.width = "5%";
 
         const formData = new FormData(dom.form);
@@ -182,18 +233,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentJobId = result.job_id;
                 startPolling();
             } else {
-                showError(result.error || "Serverfehler beim Starten.");
+                showError(result.error || "Server error during submission.");
             }
         } catch (err) {
-            showError(`Verbindungsfehler: ${err.message}`);
+            showError(`Connection Error: ${err.message}`);
         }
     }
 
     function startPolling() {
         pollingInterval = setInterval(async () => {
             try {
+                if (!currentJobId) { stopPolling(); return; }
                 const res = await fetch(`/status?job_id=${currentJobId}`);
-                if (res.status === 404) { stopPolling(); showError("Job verloren gegangen."); return; }
+                
+                if (res.status === 404) { stopPolling(); showError("Job not found (expired or invalid)."); return; }
+                if (!res.ok) { throw new Error(`HTTP error! status: ${res.status}`); }
                 
                 const status = await res.json();
                 updateProgressUI(status);
@@ -203,88 +257,136 @@ document.addEventListener('DOMContentLoaded', () => {
                     showResult(status.result_url);
                 } else if (status.status === 'error' || status.error) {
                     stopPolling();
-                    showError(status.error || status.message);
+                    showError(status.error || status.message || "An unknown error occurred.");
                 }
             } catch (err) {
-                console.error(err);
+                console.error("Polling Error:", err);
+                showError(`Polling failed: ${err.message}`);
+                stopPolling();
             }
         }, 1500);
     }
 
     function stopPolling() {
         clearInterval(pollingInterval);
+        pollingInterval = null;
     }
 
     function updateProgressUI(status) {
         const pct = status.progress || 0;
         dom.progressBar.style.width = `${pct}%`;
         
-        if(status.message) dom.statusMessage.textContent = status.message;
-        
+        // Display the latest log message
         if(status.logs && status.logs.length > 0) {
             dom.logContent.textContent = status.logs[status.logs.length - 1];
+        } else {
+            dom.logContent.textContent = status.message || "...";
+        }
+
+        if(status.message) {
+            dom.statusMessage.textContent = status.message.toUpperCase();
         }
     }
 
+    // --- Result & Error Display ---
     function showResult(url) {
         dom.progressContainer.classList.add('d-none');
         dom.resultContainer.classList.remove('d-none');
         dom.resultUrl.href = url;
-        loadHistory(); // Verlauf aktualisieren
+        dom.resultUrl.textContent = "DOWNLOAD LINK"; // Button text
+        saveToClientHistory(url); // Save to client-side history
     }
 
     function showError(msg) {
         dom.progressContainer.classList.add('d-none');
-        dom.form.classList.remove('d-none'); // Form wieder zeigen
-        dom.errorMessage.textContent = msg;
+        dom.form.classList.remove('d-none'); // Show form again for retry
+        dom.errorMessage.textContent = msg.toUpperCase();
         dom.errorMessage.classList.remove('d-none');
+        dom.submitBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> RETRY';
     }
 
-    // --- History Logic (Minimal) ---
-    async function loadHistory() {
-        if(!dom.historyTableBody) return;
+    // --- Client-Side History ---
+    function getHistory() {
+        const history = localStorage.getItem('mediaDlHistory');
+        if (!history) return [];
         try {
-            const res = await fetch('/history');
-            const data = await res.json();
-            renderHistory(data);
-        } catch(e) { console.error("History Error", e); }
+            const parsed = JSON.parse(history);
+            // Filter out expired entries
+            const now = new Date();
+            return parsed.filter(item => {
+                const expiryDate = new Date(item.expiry);
+                return expiryDate > now;
+            });
+        } catch (e) {
+            console.error("Error parsing history:", e);
+            return [];
+        }
+    }
+
+    function saveToClientHistory(url, title = "Unknown Title", platform = "Unknown") {
+        const history = getHistory();
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + HISTORY_EXPIRY_DAYS);
+
+        const newItem = {
+            url: url,
+            title: title,
+            platform: platform,
+            timestamp: new Date().toISOString(),
+            expiry: expiryDate.toISOString()
+        };
+        
+        // Add new item and limit history size (e.g., last 50)
+        history.unshift(newItem); 
+        if (history.length > 50) history.pop();
+
+        localStorage.setItem('mediaDlHistory', JSON.stringify(history));
+        renderHistory(history); // Update UI immediately
+    }
+
+    function loadClientHistory() {
+        const history = getHistory();
+        renderHistory(history);
     }
 
     function renderHistory(data) {
+        if (!dom.historyTableBody) return;
         dom.historyTableBody.innerHTML = '';
-        if(!data || !data.length) {
-            dom.historyTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Kein Verlauf vorhanden.</td></tr>';
+        if (!data || data.length === 0) {
+            dom.historyTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">NO HISTORY YET.</td></tr>';
             return;
         }
         data.forEach(item => {
             const row = document.createElement('tr');
+            const itemDate = new Date(item.timestamp);
+            const expiryDate = new Date(item.expiry);
+            const timeStr = `${itemDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+            const platformIcon = getPlatformIcon(item.platform);
+
             row.innerHTML = `
-                <td class="small text-muted">${item.timestamp.split(' ')[1]}</td>
-                <td class="text-center"><i class="fab fa-${getIconForPlatform(item.platform)}"></i></td>
-                <td class="text-truncate" style="max-width: 150px;" title="${item.title}">${item.title}</td>
-                <td class="text-end"><a href="${item.s3_url}" target="_blank" class="btn btn-sm btn-light border" data-url="${item.s3_url}"><i class="fas fa-download"></i></a></td>
+                <td class="text-muted small">${timeStr}</td>
+                <td class="text-center"><i class="${platformIcon.class}" style="color: ${platformIcon.color};"></i></td>
+                <td class="text-truncate" style="max-width: 180px;" title="${item.title}">${item.title.substring(0, 25)}...</td>
+                <td class="text-end"><a href="${item.url}" target="_blank" data-url="${item.url}" class="btn btn-sm btn-link text-success hover-underline"><i class="fas fa-link"></i></a></td>
             `;
             dom.historyTableBody.appendChild(row);
         });
     }
-
-    function getIconForPlatform(p) {
-        if(p === 'SoundCloud') return 'soundcloud text-warning';
-        if(p === 'YouTube') return 'youtube text-danger';
-        if(p === 'TikTok') return 'tiktok';
-        if(p === 'Instagram') return 'instagram text-danger';
-        if(p === 'Twitter') return 'x-twitter';
-        return 'question';
+    
+    function getPlatformIcon(p) {
+        const platformData = platforms.find(pl => pl.name === p);
+        if (platformData) return { class: `fas ${platformData.icon}`, color: platformData.color };
+        return { class: `fas fa-question-circle`, color: '#808080' };
     }
 
-    async function clearHistory() {
-        if(confirm("Verlauf wirklich löschen?")) {
-            await fetch('/clear_history', {method: 'POST'});
-            loadHistory();
+    async function clearClientHistory() {
+        if(confirm("Clear ALL history? This cannot be undone.")) {
+            localStorage.removeItem('mediaDlHistory');
+            renderHistory([]); // Clear the table
         }
     }
 
-    // Context Menu Logic
+    // --- Context Menu ---
     let contextUrl = null;
     function handleHistoryRightClick(e) {
         const linkBtn = e.target.closest('a[data-url]');
@@ -300,12 +402,29 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleContextMenuClick(e) {
         if(e.target.closest('[data-action="copy"]') && contextUrl) {
             navigator.clipboard.writeText(contextUrl);
-            dom.contextMenu.classList.add('d-none');
+            // Temporary notification for copy action
+            const notification = document.createElement('div');
+            notification.textContent = 'Link Copied!';
+            notification.style.cssText = `position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #39ff14; color: #0a0a0a; padding: 10px 20px; border-radius: 5px; z-index: 10000; font-weight: bold; opacity: 0; transition: opacity 0.5s; font-family: 'Consolas', monospace;`;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.style.opacity = '1', 10);
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => notification.remove(), 500);
+            }, 1500);
         }
+        hideContextMenu();
     }
-    
     function hideContextMenu() {
         if(dom.contextMenu) dom.contextMenu.classList.add('d-none');
+        contextUrl = null;
+    }
+    
+    // --- Stop Pseudo Logging ---
+    function stopPseudoLogging() {
+        if (pseudoLogInterval) clearInterval(pseudoLogInterval);
+        // Keep logs visible until progress starts
+        // Optionally hide it after transition: setTimeout(() => dom.pseudoLogArea.style.display = 'none', 800);
     }
 
     init();

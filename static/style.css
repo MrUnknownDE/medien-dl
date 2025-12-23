@@ -1,180 +1,281 @@
-/* Modern Reset & Base */
+/* Terminal/CLI Theme - Dark & Monospace */
+
 :root {
-    --primary-color: #6366f1; /* Indigo */
-    --secondary-color: #a855f7; /* Purple */
-    --bg-dark: #0f172a;
-    --text-main: #1e293b;
+    --bg-dark: #0a0a0a;
+    --text-color: #00ff00; /* Classic Green */
+    --text-muted: #008000; /* Darker Green */
+    --text-highlight: #39ff14; /* Bright Green */
+    --accent-primary: #00ff00;
+    --accent-secondary: #39ff14;
+    --input-bg: rgba(0, 255, 0, 0.05);
+    --input-border: rgba(0, 255, 0, 0.2);
+    --card-bg: rgba(10, 10, 10, 0.7);
+    --card-border: rgba(0, 255, 0, 0.1);
+    --shadow-color: rgba(0, 255, 0, 0.2);
+    --progress-bg: rgba(0, 255, 0, 0.15);
+    --progress-bar: linear-gradient(90deg, #00ff00, #39ff14);
+    --error-bg: rgba(255, 0, 0, 0.1);
+    --error-border: rgba(255, 0, 0, 0.3);
+    --success-color: #39ff14;
 }
 
 body {
-    font-family: 'Inter', sans-serif;
-    background-color: #f1f5f9;
-    color: var(--text-main);
-    overflow-x: hidden;
+    background-color: var(--bg-dark);
+    color: var(--text-color);
+    font-family: 'Consolas', 'Monaco', 'Andale Mono', 'Ubuntu Mono', monospace;
+    line-height: 1.5;
+    overflow-x: hidden; /* Verhindert horizontale Scrollbalken */
 }
 
-/* Animated Background Shapes */
-.bg-shape {
+/* Terminal Background Animation */
+.terminal-backdrop {
     position: fixed;
-    border-radius: 50%;
-    filter: blur(80px);
-    z-index: -1;
-    opacity: 0.6;
-    animation: float 10s infinite ease-in-out;
-}
-
-.shape-1 {
-    top: -10%;
-    left: -10%;
-    width: 600px;
-    height: 600px;
-    background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
-}
-
-.shape-2 {
-    bottom: -10%;
-    right: -10%;
-    width: 500px;
-    height: 500px;
-    background: linear-gradient(to left, #3b82f6, #06b6d4);
-    animation-delay: -5s;
-}
-
-@keyframes float {
-    0%, 100% { transform: translate(0, 0); }
-    50% { transform: translate(30px, 20px); }
-}
-
-/* Hero Card */
-.hero-card {
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    border-radius: 24px;
-    padding: 3rem;
+    top: 0;
+    left: 0;
     width: 100%;
-    max-width: 650px;
-    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1);
+    height: 100%;
+    background: var(--bg-dark);
+    overflow: hidden;
+    z-index: -1;
 }
 
-.text-gradient {
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+.terminal-line {
+    position: absolute;
+    background: linear-gradient(to right, rgba(0, 255, 0, 0.02), rgba(57, 255, 20, 0.01));
+    animation: scanline 15s linear infinite;
+}
+.terminal-line:nth-child(1) { top: 10%; width: 80%; left: 10%; animation-duration: 12s; }
+.terminal-line:nth-child(2) { top: 50%; width: 60%; left: 20%; animation-duration: 18s; animation-delay: -6s; }
+.terminal-line:nth-child(3) { top: 80%; width: 70%; left: 15%; animation-duration: 14s; animation-delay: -4s; }
+
+@keyframes scanline {
+    0% { opacity: 0; transform: translateX(-100%); }
+    50% { opacity: 0.5; }
+    100% { opacity: 0; transform: translateX(100%); }
+}
+
+/* Main Container */
+.container {
+    z-index: 2;
+}
+
+/* CLI Card */
+.cli-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 2rem 2.5rem;
+    width: 100%;
+    max-width: 700px;
+    box-shadow: 0 0 15px var(--shadow-color);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.cli-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px var(--shadow-color);
+}
+
+.logo-text {
+    background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 10px var(--shadow-color);
 }
 
-/* Input Styling */
-.main-input-group {
-    border-radius: 16px;
+/* CLI Input Group */
+.cli-input-group {
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 6px;
     overflow: hidden;
-    transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.main-input-group:focus-within {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.3) !important;
-}
-
-.main-input-group input {
-    font-size: 1.1rem;
-    background: white;
-}
-.main-input-group input:focus {
-    box-shadow: none;
-    background: white;
-}
-
-#submit-button {
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+.cli-input-group .input-group-text {
+    background: transparent;
     border: none;
-    transition: filter 0.2s;
-}
-#submit-button:hover {
-    filter: brightness(110%);
+    color: var(--text-muted);
 }
 
-/* Options Animation */
-.options-wrapper {
-    overflow: hidden;
-    max-height: 0;
-    opacity: 0;
-    transition: max-height 0.5s ease-in-out, opacity 0.4s ease-in-out;
+.cli-input {
+    color: var(--text-color);
+    caret-color: var(--text-highlight);
+    border-radius: 0; /* Ensures no rounded corners inside */
+}
+.cli-input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.7;
 }
 
-.options-wrapper.show {
-    max-height: 500px; /* Groß genug */
-    opacity: 1;
+.cli-button {
+    background: var(--accent-primary);
+    border: none;
+    color: var(--bg-dark);
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+.cli-button:hover {
+    background: var(--accent-secondary);
+    transform: translateX(2px);
 }
 
-.animate-options {
-    animation: fadeIn 0.5s ease;
+/* CLI Badge */
+.cli-badge {
+    background: rgba(0, 255, 0, 0.1);
+    border: 1px solid var(--input-border);
+    color: var(--text-highlight);
+}
+.cli-icon {
+    color: var(--text-highlight);
 }
 
-/* Glass Button */
-.btn-white-glass {
-    background: rgba(255, 255, 255, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(5px);
-    color: var(--text-main);
-    transition: all 0.2s;
+/* CLI Output & Options */
+.cli-output-line {
+    font-family: 'Consolas', monospace;
+    text-align: left;
+    color: var(--text-muted);
+    font-size: 0.9rem;
 }
-.btn-white-glass:hover {
-    background: white;
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+.cli-highlight {
+    color: var(--text-highlight);
+    animation: blink 1s infinite step-end;
+}
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+.cli-output-box {
+    background: rgba(10, 20, 10, 0.5);
+    border: 1px solid var(--card-border);
+    padding: 1rem;
+    border-radius: 4px;
+    text-align: left;
+    overflow: hidden; /* Important for smooth fade-in */
+}
+.cli-output-box pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.cli-card-inner {
+    background: rgba(20, 40, 20, 0.4);
+    border-radius: 6px;
+}
+
+.cli-section {
+    animation: fadeInUpCli 0.5s ease-out;
+}
+@keyframes fadeInUpCli {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Options Styling */
+.form-label.small { font-size: 0.8rem; font-weight: bold; color: var(--text-muted); }
+.text-success { color: var(--accent-secondary) !important; }
+.btn-outline-success { border-color: var(--accent-primary); color: var(--accent-primary); }
+.btn-outline-success:hover { background-color: var(--accent-primary); color: var(--bg-dark); }
+.btn-check:checked + .btn-outline-success { background-color: var(--accent-primary); border-color: var(--accent-primary); color: var(--bg-dark); }
+
+.cli-select {
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    color: var(--text-color);
+    border-radius: 4px;
+}
+
+/* Switch Button */
+.form-switch .form-check-input {
+    background-color: var(--text-muted);
+    border-color: var(--input-border);
+    transition: background-color 0.2s, border-color 0.2s;
+}
+.form-switch .form-check-input:checked {
+    background-color: var(--accent-primary);
+    border-color: var(--accent-secondary);
 }
 
 /* Progress Bar */
-.bg-gradient-primary {
-    background: linear-gradient(90deg, var(--primary-color), #06b6d4);
-    background-size: 200% 100%;
-    animation: gradientMove 2s linear infinite;
+.cli-progress {
+    height: 10px;
+    border-radius: 5px;
+    background: var(--progress-bg);
+    border: 1px solid var(--input-border);
+}
+.cli-progress-bar {
+    background: var(--progress-bar);
+    border-radius: 5px;
+    transition: width 0.3s ease-out;
+    box-shadow: 0 0 5px var(--shadow-color);
 }
 
-@keyframes gradientMove {
-    0% { background-position: 100% 0; }
-    100% { background-position: -100% 0; }
+/* Alerts & Modals */
+.cli-alert {
+    background: var(--error-bg);
+    border: 1px solid var(--error-border);
+    color: var(--text-color);
+    border-radius: 4px;
+}
+.cli-modal-content {
+    background-color: var(--bg-dark);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+}
+.cli-modal-header, .cli-modal-footer {
+    background-color: rgba(15, 15, 15, 0.8);
+    border: none;
+}
+.cli-table {
+    background-color: transparent;
+}
+.cli-table th {
+    background-color: rgba(10, 20, 10, 0.6);
+    color: var(--text-highlight);
+    border: none !important;
+    font-size: 0.8rem;
+}
+.cli-table td {
+    border-top: 1px solid var(--card-border);
+    color: var(--text-muted);
+}
+.cli-table tbody tr:hover td {
+    background-color: rgba(0, 255, 0, 0.1) !important;
+}
+.cli-table td a {
+    color: var(--accent-secondary);
 }
 
-.animate-pulse {
-    animation: pulse 1.5s infinite;
+/* Context Menu */
+.cli-context-menu {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 6px;
 }
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+.cli-context-menu .list-group-item {
+    background: transparent;
+    color: var(--text-color);
+    border: none;
+    transition: background 0.2s ease;
+}
+.cli-context-menu .list-group-item:hover {
+    background: rgba(0, 255, 0, 0.1);
 }
 
-/* Helpers */
-.hover-lift:hover {
-    transform: translateY(-3px);
-}
-.fade-in-up {
-    animation: fadeInUp 0.8s ease-out;
-}
-
+/* General Animation */
+.fade-in-up { animation: fadeInUp 0.8s ease-out forwards; }
 @keyframes fadeInUp {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-.extra-small {
-    font-size: 0.75rem;
-}
+.animate-options { animation: fadeInCli 0.5s ease-out forwards; }
 
-/* Context Menu */
-.context-menu {
-    z-index: 9999;
-    min-width: 150px;
-    border-radius: 8px;
-    overflow: hidden;
-    border: none;
-}
-.context-menu .list-group-item {
-    cursor: pointer;
-    font-size: 0.9rem;
-    border: none;
-}
-.context-menu .list-group-item:hover {
-    background-color: #f3f4f6;
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .cli-card { padding: 1.5rem; }
+    .logo-text { font-size: 2.5rem; }
+    .input-group-lg .form-control, .input-group-lg .form-select, .input-group-lg .input-group-text { font-size: 1rem; }
 }
