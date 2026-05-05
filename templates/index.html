@@ -1,25 +1,66 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>unknownMedien.dl</title>
+
+    <!-- Primary SEO -->
+    <title>{{ site_name }} — Media Downloader</title>
+    <meta name="description" content="{{ site_description }}">
+    <meta name="keywords"    content="{{ site_keywords }}">
+    <meta name="author"      content="{{ site_name }}">
+    <meta name="robots"      content="index, follow">
+    {% if site_url %}
+    <link rel="canonical"    href="{{ site_url }}/">
+    {% endif %}
+
+    <!-- Open Graph -->
+    <meta property="og:type"        content="website">
+    <meta property="og:title"       content="{{ site_name }} — Media Downloader">
+    <meta property="og:description" content="{{ site_description }}">
+    <meta property="og:site_name"   content="{{ site_name }}">
+    {% if site_url %}
+    <meta property="og:url"         content="{{ site_url }}/">
+    {% endif %}
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card"        content="summary">
+    <meta name="twitter:title"       content="{{ site_name }} — Media Downloader">
+    <meta name="twitter:description" content="{{ site_description }}">
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "{{ site_name }}",
+        "description": "{{ site_description }}",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Web",
+        {% if site_url %}"url": "{{ site_url }}/",{% endif %}
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "featureList": [
+            {% for p in platforms %}"Download from {{ p }}"{% if not loop.last %},{% endif %}{% endfor %}
+        ]
+    }
+    </script>
+
+    <!-- Styles -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 
     <!-- Background layers -->
-    <div class="bg-base"></div>
-    <div class="bg-mesh"></div>
-    <div class="bg-glow bg-glow-1"></div>
-    <div class="bg-glow bg-glow-2"></div>
-    <div class="bg-glow bg-glow-3"></div>
-    <div class="bg-noise"></div>
-
-    <!-- Floating particles (CSS-animated) -->
-    <div class="particles" aria-hidden="true">
+    <div class="bg-base"    aria-hidden="true"></div>
+    <div class="bg-mesh"    aria-hidden="true"></div>
+    <div class="bg-glow bg-glow-1" aria-hidden="true"></div>
+    <div class="bg-glow bg-glow-2" aria-hidden="true"></div>
+    <div class="bg-glow bg-glow-3" aria-hidden="true"></div>
+    <div class="bg-noise"   aria-hidden="true"></div>
+    <div class="particles"  aria-hidden="true">
         <span class="particle p1"></span>
         <span class="particle p2"></span>
         <span class="particle p3"></span>
@@ -28,27 +69,31 @@
         <span class="particle p6"></span>
     </div>
 
-    <!-- Navbar -->
-    <nav class="navbar fixed-top w-100 px-4 py-3 d-flex justify-content-between align-items-center">
-        <div class="brand">
-            unknown<span class="brand-accent">Medien</span><span class="brand-dot">.dl</span>
-        </div>
-        <button class="btn btn-glass-icon" data-bs-toggle="modal" data-bs-target="#historyModal" title="History">
-            <i class="fas fa-clock-rotate-left"></i>
-        </button>
-    </nav>
+    <!-- Header -->
+    <header>
+        <nav class="navbar fixed-top w-100 px-4 py-3 d-flex justify-content-between align-items-center"
+             role="navigation" aria-label="Main navigation">
+            <a href="/" class="brand text-decoration-none">
+                unknown<span class="brand-accent">Medien</span><span class="brand-dot">.dl</span>
+            </a>
+            <button class="btn btn-glass-icon" data-bs-toggle="modal" data-bs-target="#historyModal"
+                    title="View download history" aria-label="Open history">
+                <i class="fas fa-clock-rotate-left" aria-hidden="true"></i>
+            </button>
+        </nav>
+    </header>
 
-    <!-- Main -->
-    <main class="page-center">
+    <!-- Main Content -->
+    <main class="page-center" id="main-content">
         <div class="hero-wrapper">
 
             <!-- Eyebrow -->
-            <div class="eyebrow fade-in">
+            <p class="eyebrow fade-in" aria-hidden="true">
                 <span class="eyebrow-dot"></span>
                 <span>Media Downloader</span>
-            </div>
+            </p>
 
-            <!-- Title -->
+            <!-- Hero Headline — SSR, indexed by crawlers -->
             <h1 class="hero-title fade-in delay-1">
                 Download<br>anything.
             </h1>
@@ -56,50 +101,60 @@
                 Paste your link — we'll handle the rest.
             </p>
 
-            <!-- Form -->
-            <div class="form-container fade-in delay-3">
-                <form id="upload-form" autocomplete="off">
+            <!-- SSR platform list (visible to crawlers, hidden visually) -->
+            <p class="sr-only">
+                Supports: {% for p in platforms %}{{ p }}{% if not loop.last %}, {% endif %}{% endfor %}.
+                Download as MP3 or MP4 with optional H.264 re-encoding and direct upload to your S3 bucket.
+            </p>
+
+            <!-- Download Form -->
+            <section class="form-container fade-in delay-3" aria-label="Download form">
+                <form id="upload-form" autocomplete="off" novalidate>
                     <input type="hidden" name="platform" id="input-platform" value="SoundCloud">
 
-                    <!-- URL Input Row -->
+                    <!-- URL Input -->
                     <div class="input-row">
                         <div class="glass-input-wrapper" id="input-wrapper">
-                            <span class="input-icon" id="url-icon"><i class="fas fa-link"></i></span>
+                            <span class="input-icon" id="url-icon" aria-hidden="true">
+                                <i class="fas fa-link"></i>
+                            </span>
+                            <label for="url" class="sr-only">Media URL</label>
                             <input type="url" class="url-field" id="url" name="url" required
-                                   placeholder="https://soundcloud.com/..." />
-                            <button class="start-btn" type="submit" id="submit-button">
+                                   placeholder="https://soundcloud.com/..."
+                                   aria-label="Paste your media URL here" />
+                            <button class="start-btn" type="submit" id="submit-button"
+                                    aria-label="Start download">
                                 <span class="start-label">Start</span>
-                                <i class="fas fa-arrow-right start-arrow"></i>
-                                <span class="btn-ripple"></span>
+                                <i class="fas fa-arrow-right start-arrow" aria-hidden="true"></i>
+                                <span class="btn-ripple" aria-hidden="true"></span>
                             </button>
                         </div>
                     </div>
 
-                    <!-- Platform detection -->
-                    <div id="detection-area" class="detection-area">
-                        <div class="platform-badge" id="platform-badge">
-                            <span class="platform-pulse" id="platform-pulse"></span>
-                            <i id="detected-icon" class="fab fa-soundcloud"></i>
+                    <!-- Platform detection badge + options -->
+                    <div id="detection-area" class="detection-area" aria-live="polite">
+                        <div class="platform-badge" id="platform-badge" aria-label="Detected platform">
+                            <span class="platform-pulse" id="platform-pulse" aria-hidden="true"></span>
+                            <i id="detected-icon" class="fab fa-soundcloud" aria-hidden="true"></i>
                             <span id="detected-text">SoundCloud detected</span>
                         </div>
 
-                        <!-- Options drawer -->
-                        <div id="options-container" class="options-container">
-                            <!-- YouTube -->
+                        <div id="options-container" class="options-container" role="group" aria-label="Format options">
+                            <!-- YouTube options -->
                             <div id="youtube-options" class="d-none option-block">
                                 <div class="d-flex gap-4 justify-content-center flex-wrap">
                                     <div class="option-col">
-                                        <div class="option-label">Format</div>
-                                        <div class="switch-toggle">
+                                        <div class="option-label" id="format-label">Format</div>
+                                        <div class="switch-toggle" role="radiogroup" aria-labelledby="format-label">
                                             <input type="radio" name="yt_format" id="format-mp3" value="mp3" checked>
                                             <label for="format-mp3">MP3</label>
                                             <input type="radio" name="yt_format" id="format-mp4" value="mp4">
                                             <label for="format-mp4">MP4</label>
-                                            <div class="toggle-pill"></div>
+                                            <div class="toggle-pill" aria-hidden="true"></div>
                                         </div>
                                     </div>
                                     <div class="option-col" id="quality-wrapper">
-                                        <div class="option-label">Quality</div>
+                                        <label class="option-label" for="mp3_bitrate">Quality</label>
                                         <select class="glass-select" id="mp3_bitrate" name="mp3_bitrate">
                                             <option>Best</option>
                                             <option selected>192k</option>
@@ -114,90 +169,109 @@
                                     </div>
                                 </div>
                             </div>
-                            <!-- Codec -->
+                            <!-- Codec toggle -->
                             <div id="codec-options-section" class="d-none option-block text-center">
                                 <div class="codec-row">
-                                    <span class="option-label me-3">H.264 Compatibility</span>
+                                    <label class="option-label" for="codec-switch">H.264 Compatibility</label>
                                     <label class="toggle-switch">
-                                        <input class="ts-input" type="checkbox" role="switch" id="codec-switch">
+                                        <input class="ts-input" type="checkbox" role="switch"
+                                               id="codec-switch" aria-describedby="codec-desc">
                                         <span class="ts-track"><span class="ts-thumb"></span></span>
                                         <input type="hidden" name="codec_preference" id="codec_preference" value="original">
                                     </label>
                                 </div>
+                                <p id="codec-desc" class="sr-only">Re-encode video to H.264 for maximum device compatibility</p>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Error -->
-                    <div id="error-message" class="error-alert d-none" role="alert"></div>
+                    <!-- Error message -->
+                    <div id="error-message" class="error-alert d-none" role="alert" aria-live="assertive"></div>
                 </form>
-            </div>
+            </section>
 
-            <!-- Processing view -->
-            <div id="process-view" class="d-none process-view">
+            <!-- Processing view (JS-controlled, not indexed) -->
+            <section id="process-view" class="d-none process-view" aria-label="Processing status" aria-live="polite">
                 <div class="process-header">
-                    <h3 id="status-message" class="status-msg">INITIALIZING...</h3>
-                    <span id="progress-pct" class="progress-pct">0%</span>
+                    <h2 id="status-message" class="status-msg">INITIALIZING...</h2>
+                    <span id="progress-pct" class="progress-pct" aria-live="polite">0%</span>
                 </div>
-                <div class="progress-track">
+                <div class="progress-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
                     <div id="progress-bar" class="progress-fill" style="width:0%"></div>
                 </div>
-                <div class="terminal-window">
-                    <div class="terminal-bar">
+                <div class="terminal-window" aria-label="Processing log" role="log">
+                    <div class="terminal-bar" aria-hidden="true">
                         <span class="tdot tdot-r"></span>
                         <span class="tdot tdot-y"></span>
                         <span class="tdot tdot-g"></span>
-                        <span class="tbar-label">worker@unknown-dl ~ process</span>
+                        <span class="tbar-label">worker@{{ site_name|lower|replace(' ','') }} ~ process</span>
                     </div>
                     <div id="pseudo-log-content" class="terminal-body"></div>
                 </div>
-            </div>
+            </section>
 
             <!-- Result view -->
-            <div id="result-view" class="d-none result-view">
+            <section id="result-view" class="d-none result-view" aria-label="Download result" aria-live="polite">
                 <div class="result-card">
                     <div class="result-icon-wrap success-ripple">
-                        <div class="result-icon">
+                        <div class="result-icon" aria-hidden="true">
                             <i class="fas fa-check"></i>
                         </div>
                     </div>
                     <h2 class="result-title">Done!</h2>
                     <p class="result-sub">Your file is ready to download.</p>
-                    <a id="result-url" href="#" target="_blank" class="btn-download">
-                        <i class="fas fa-download me-2"></i>Download
+                    <a id="result-url" href="#" target="_blank" rel="noopener" class="btn-download">
+                        <i class="fas fa-download me-2" aria-hidden="true"></i>Download
                     </a>
                     <div class="result-retry">
-                        <button class="btn-retry" onclick="location.reload()">
-                            <i class="fas fa-rotate-left me-1"></i>Convert another
+                        <button class="btn-retry" onclick="location.reload()" type="button">
+                            <i class="fas fa-rotate-left me-1" aria-hidden="true"></i>Convert another
                         </button>
                     </div>
                 </div>
-            </div>
+            </section>
 
         </div>
     </main>
 
+    <!-- Footer (SSR, indexable) -->
+    <footer class="site-footer" aria-label="Supported platforms">
+        <div class="footer-inner">
+            <p class="footer-platforms">
+                {% for p in platforms %}
+                <span class="footer-platform">{{ p }}</span>
+                {% endfor %}
+            </p>
+            <p class="footer-note">
+                {% if successful_jobs > 0 %}{{ successful_jobs }} successful downloads &nbsp;·&nbsp; {% endif %}
+                History stored locally in your browser only
+            </p>
+        </div>
+    </footer>
+
     <!-- History Modal -->
-    <div class="modal fade" id="historyModal" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="historyModal" tabindex="-1"
+         aria-labelledby="historyModalTitle" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content glass-modal">
                 <div class="modal-header">
                     <div>
-                        <h5 class="modal-title">History</h5>
+                        <h3 class="modal-title" id="historyModalTitle">History</h3>
                         <p class="modal-hint">Stored locally in your browser · 7 days</p>
                     </div>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white"
+                            data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-0">
-                    <div class="table-responsive" style="max-height: 55vh;">
+                    <div class="table-responsive" style="max-height:55vh;">
                         <table class="history-table" id="history-table">
                             <thead>
                                 <tr>
-                                    <th class="ps-4">Time</th>
-                                    <th>Platform</th>
-                                    <th>Title</th>
-                                    <th class="text-center">Source</th>
-                                    <th class="text-end pe-4">File</th>
+                                    <th class="ps-4" scope="col">Time</th>
+                                    <th scope="col">Platform</th>
+                                    <th scope="col">Title</th>
+                                    <th class="text-center" scope="col">Source</th>
+                                    <th class="text-end pe-4" scope="col">File</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
@@ -205,14 +279,21 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button id="clear-history-button" class="btn-clear-history">
-                        <i class="fas fa-trash-can me-1"></i>Clear all
+                    <button id="clear-history-button" class="btn-clear-history" type="button">
+                        <i class="fas fa-trash-can me-1" aria-hidden="true"></i>Clear all
                     </button>
                     <span class="modal-footer-hint">Your data never leaves this browser</span>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- No-JS fallback -->
+    <noscript>
+        <div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#06040f;color:white;font-family:sans-serif;text-align:center;padding:2rem;z-index:9999">
+            <p>{{ site_name }} requires JavaScript to work. Please enable it in your browser settings.</p>
+        </div>
+    </noscript>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='script.js') }}"></script>

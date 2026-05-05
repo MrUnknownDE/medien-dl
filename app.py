@@ -13,7 +13,7 @@ from datetime import datetime
 import random
 import string
 import re
-from flask import Flask, render_template, request, jsonify, Response, copy_current_request_context
+from flask import Flask, render_template, request, jsonify, Response, copy_current_request_context, make_response
 import time
 # import queue # ALT
 import multiprocessing # NEU: Für prozessübergreifende Queue
@@ -24,6 +24,12 @@ import traceback # NEU: Für detaillierte Fehlermeldungen
 
 # --- Konstanten ---
 STATS_FILE = "stats.json"
+
+# --- Site-Metadaten (für SSR / SEO) ---
+SITE_NAME        = os.getenv('SITE_NAME',        'unknownMedien.dl')
+SITE_URL         = os.getenv('SITE_URL',         '').rstrip('/')
+SITE_DESCRIPTION = os.getenv('SITE_DESCRIPTION', 'Free media downloader. Save audio and video from YouTube, SoundCloud, TikTok, Instagram and Twitter directly to your cloud storage.')
+SITE_KEYWORDS    = 'media downloader, youtube downloader, soundcloud downloader, tiktok downloader, instagram reels, mp3 download, mp4 download, s3 upload'
 RANDOM_NAME_LENGTH = 4
 MAX_FILENAME_RETRIES = 10
 ANSI_ESCAPE_REGEX = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
@@ -715,7 +721,43 @@ def index():
     if not isinstance(job_statuses, type(manager.dict())):
         job_statuses = manager.dict()
         logging.warning("job_statuses wurde neu initialisiert (wahrscheinlich nach Reload).")
-    return render_template('index.html')
+    stats = load_stats()
+    ctx = {
+        'site_name':        SITE_NAME,
+        'site_url':         SITE_URL,
+        'site_description': SITE_DESCRIPTION,
+        'site_keywords':    SITE_KEYWORDS,
+        'platforms':        SUPPORTED_PLATFORMS,
+        'total_jobs':       stats.get('total_jobs', 0),
+        'successful_jobs':  stats.get('successful_jobs', 0),
+    }
+    return render_template('index.html', **ctx)
+
+@app.route('/robots.txt')
+def robots_txt():
+    lines = [
+        'User-agent: *',
+        'Allow: /',
+        f'Sitemap: {SITE_URL}/sitemap.xml' if SITE_URL else '',
+    ]
+    resp = make_response('\n'.join(filter(None, lines)), 200)
+    resp.headers['Content-Type'] = 'text/plain'
+    return resp
+
+@app.route('/sitemap.xml')
+def sitemap_xml():
+    url_root = SITE_URL or request.url_root.rstrip('/')
+    xml = f'''<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>{url_root}/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>'''
+    resp = make_response(xml, 200)
+    resp.headers['Content-Type'] = 'application/xml'
+    return resp
 
 @app.route('/start_download', methods=['POST'])
 def start_download():
