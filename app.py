@@ -23,7 +23,6 @@ import subprocess # NEU: Für FFmpeg Aufruf
 import traceback # NEU: Für detaillierte Fehlermeldungen
 
 # --- Konstanten ---
-HISTORY_FILE = "download_history.json"
 STATS_FILE = "stats.json"
 RANDOM_NAME_LENGTH = 4
 MAX_FILENAME_RETRIES = 10
@@ -72,7 +71,6 @@ if env_loaded_successfully: logging.info(f".env Datei gefunden und geladen von: 
 else: logging.warning(".env Datei nicht gefunden...")
 
 # --- Konfiguration aus .env lesen ---
-ENABLE_HISTORY = os.getenv('ENABLE_HISTORY', 'true').lower() == 'true'
 try:
     MAX_WORKERS = int(os.getenv('MAX_WORKERS', '1'))
     if MAX_WORKERS < 1:
@@ -84,7 +82,6 @@ except ValueError:
 
 if MAX_WORKERS <= 0: MAX_WORKERS = 1 # Sicherstellen, dass mindestens 1 Worker läuft
 
-logging.info(f"Verlauf aktiviert: {ENABLE_HISTORY}")
 logging.info(f"Maximale Worker-Threads (für Hintergrundverarbeitung): {MAX_WORKERS}")
 
 # --- Flask App Initialisierung ---
@@ -455,42 +452,7 @@ def upload_to_s3(job_id, file_path, object_name, file_extension, bucket_name, aw
         update_status(job_id, error=error_msg, running=False)
         return False
 
-# --- History Funktionen (Backend - unverändert) ---
-def load_history():
-    if not ENABLE_HISTORY: return []
-    try:
-        if os.path.exists(HISTORY_FILE):
-            if os.path.getsize(HISTORY_FILE) == 0: logging.warning(f"{HISTORY_FILE} ist leer."); return []
-            with open(HISTORY_FILE, 'r', encoding='utf-8') as f: history = json.load(f)
-            return history if isinstance(history, list) else []
-        else: return []
-    except json.JSONDecodeError as e: logging.error(f"Fehler Laden History (JSON ungültig): {e}."); return []
-    except Exception as e: logging.error(f"Fehler Laden History (Allgemein): {e}"); return []
-
-def save_history(history_data):
-    if not ENABLE_HISTORY: return True
-    try:
-        with open(HISTORY_FILE, 'w', encoding='utf-8') as f: json.dump(history_data, f, indent=4, ensure_ascii=False)
-        logging.info(f"History gespeichert: {HISTORY_FILE}")
-        return True
-    except Exception as e: logging.error(f"Fehler Speichern History: {e}"); return False
-
-def add_history_entry(platform, title, source_url, s3_url):
-    if not ENABLE_HISTORY: return True
-    history = load_history()
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    entry = {"timestamp": timestamp, "platform": platform, "title": title, "source_url": source_url, "s3_url": s3_url}
-    history.insert(0, entry)
-    return save_history(history)
-
-def clear_history_file():
-     if not ENABLE_HISTORY: return True
-     try:
-          if os.path.exists(HISTORY_FILE): os.remove(HISTORY_FILE); logging.info("History-Datei gelöscht.")
-          return True
-     except Exception as e: logging.error(f"Fehler Löschen History-Datei: {e}"); return False
-
-# --- Statistik Funktionen (Backend - unverändert) ---
+# --- Statistik Funktionen ---
 def load_stats():
     default_stats = {'total_jobs': 0, 'successful_jobs': 0, 'total_duration_seconds': 0.0, 'total_size_bytes': 0}
     try:
@@ -633,10 +595,6 @@ def run_download_upload_task(job_id, url, platform, format_preference, mp3_bitra
                         update_status(job_id, message="Abgeschlossen! (Keine Public URL Base konfiguriert)")
                         logging.warning(f"[{job_id}] Öffentliche URL kann nicht angezeigt werden (S3_PUBLIC_URL_BASE fehlt).")
 
-                    if not add_history_entry(platform, track_title, url, final_s3_url_for_history):
-                         logging.warning(f"[{job_id}] Konnte Eintrag nicht zur History hinzufügen.")
-                         update_status(job_id, log_entry="WARNUNG: Konnte Eintrag nicht zur History hinzufügen.")
-
     except Exception as e:
         logging.exception(f"[{job_id}] Unerwarteter Fehler im Hauptverarbeitungsblock für URL {url}:")
         final_error_message = f"Unerwarteter Verarbeitungsfehler: {strip_ansi_codes(str(e))}"
@@ -757,7 +715,7 @@ def index():
     if not isinstance(job_statuses, type(manager.dict())):
         job_statuses = manager.dict()
         logging.warning("job_statuses wurde neu initialisiert (wahrscheinlich nach Reload).")
-    return render_template('index.html', history_enabled=ENABLE_HISTORY)
+    return render_template('index.html')
 
 @app.route('/start_download', methods=['POST'])
 def start_download():
@@ -786,14 +744,6 @@ def start_download():
         if platform == "Instagram": error_msg += " Stelle sicher, dass es ein Reel- oder Post-Link ist (enthält /reel/ oder /p/)."
         if platform == "Twitter": error_msg += " Stelle sicher, dass es ein Tweet-Link ist (enthält /status/)."
         return jsonify({"error": error_msg}), 400
-
-    if ENABLE_HISTORY:
-        history = load_history()
-        for entry in history:
-            entry_url = entry.get('source_url') or entry.get('soundcloud_url')
-            if entry_url == url:
-                entry_platform = entry.get('platform', 'Unbekannt')
-                return jsonify({"error": f"Dieser Link ({entry_platform}) wurde bereits verarbeitet (Verlauf aktiv)."}), 400
 
     access_key = os.getenv('AWS_ACCESS_KEY_ID'); secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
     bucket_name = os.getenv('AWS_S3_BUCKET_NAME'); region_name = os.getenv('AWS_REGION')
@@ -844,18 +794,6 @@ def get_status():
         if "logs" in current_status_copy and not isinstance(current_status_copy["logs"], list):
              current_status_copy["logs"] = list(current_status_copy["logs"])
         return jsonify(current_status_copy)
-
-@app.route('/history')
-def get_history():
-    history = load_history()
-    return jsonify(history)
-
-@app.route('/clear_history', methods=['POST'])
-def clear_history_route():
-    if clear_history_file():
-        return jsonify({"message": "Verlauf gelöscht (falls aktiviert)."}), 200
-    else:
-        return jsonify({"error": "Fehler beim Löschen des Verlaufs."}), 500
 
 @app.route('/stats')
 def get_stats():
@@ -942,7 +880,7 @@ if __name__ == '__main__':
     else: print("\nINFO: FFmpeg gefunden.\n")
     print(f"\nFlask App startet (lokaler Modus)...");
     print(f"Download-Verzeichnis: {DOWNLOAD_DIR}")
-    print(f"Verlauf aktiviert: {ENABLE_HISTORY}")
+    print(f"History: Browser localStorage only")
     print(f"Öffne http://127.0.0.1:5000 oder http://<Deine-IP>:5000 im Browser.")
     print("(Beende mit STRG+C)\n")
     app.run(debug=False, host='0.0.0.0', port=5000, use_reloader=False)

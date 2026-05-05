@@ -3,158 +3,172 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>unknownMedien.dl</title>
-    
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <!-- Custom CSS -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 
-    <!-- Animated Background -->
-    <div class="bg-gradient-animate"></div>
+    <!-- Background layers -->
+    <div class="bg-base"></div>
+    <div class="bg-mesh"></div>
     <div class="bg-glow bg-glow-1"></div>
     <div class="bg-glow bg-glow-2"></div>
+    <div class="bg-glow bg-glow-3"></div>
+    <div class="bg-noise"></div>
 
-    <!-- Header / Nav -->
-    <nav class="navbar fixed-top w-100 p-4 d-flex justify-content-between align-items-center z-3">
-        <div class="brand fw-bold text-white fs-4 tracking-wide">
-            unknownMedien<span class="text-primary-light">.dl</span>
+    <!-- Floating particles (CSS-animated) -->
+    <div class="particles" aria-hidden="true">
+        <span class="particle p1"></span>
+        <span class="particle p2"></span>
+        <span class="particle p3"></span>
+        <span class="particle p4"></span>
+        <span class="particle p5"></span>
+        <span class="particle p6"></span>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="navbar fixed-top w-100 px-4 py-3 d-flex justify-content-between align-items-center">
+        <div class="brand">
+            unknown<span class="brand-accent">Medien</span><span class="brand-dot">.dl</span>
         </div>
         <button class="btn btn-glass-icon" data-bs-toggle="modal" data-bs-target="#historyModal" title="History">
-            <i class="fas fa-history"></i>
+            <i class="fas fa-clock-rotate-left"></i>
         </button>
     </nav>
 
-    <!-- Main Content (Hero) -->
-    <main class="container-fluid min-vh-100 d-flex flex-column justify-content-center align-items-center position-relative z-2">
-        
-        <div class="hero-wrapper w-100 text-center">
-            
-            <!-- Headline -->
-            <h1 class="hero-title mb-3 fade-in">Media Downloader</h1>
-            <p class="hero-subtitle text-white-50 mb-5 fade-in delay-1">
-                Simply paste your link. We handle the rest.
+    <!-- Main -->
+    <main class="page-center">
+        <div class="hero-wrapper">
+
+            <!-- Eyebrow -->
+            <div class="eyebrow fade-in">
+                <span class="eyebrow-dot"></span>
+                <span>Media Downloader</span>
+            </div>
+
+            <!-- Title -->
+            <h1 class="hero-title fade-in delay-1">
+                Download<br>anything.
+            </h1>
+            <p class="hero-sub fade-in delay-2">
+                Paste your link — we'll handle the rest.
             </p>
 
-            <!-- Form Area -->
-            <div class="form-container fade-in delay-2">
-                <form id="upload-form">
+            <!-- Form -->
+            <div class="form-container fade-in delay-3">
+                <form id="upload-form" autocomplete="off">
                     <input type="hidden" name="platform" id="input-platform" value="SoundCloud">
 
-                    <!-- Main Input -->
-                    <div class="glass-input-wrapper d-flex align-items-center shadow-lg">
-                        <div class="icon-zone ps-4 text-white-50">
-                            <i class="fas fa-link" id="url-icon"></i>
+                    <!-- URL Input Row -->
+                    <div class="input-row">
+                        <div class="glass-input-wrapper" id="input-wrapper">
+                            <span class="input-icon" id="url-icon"><i class="fas fa-link"></i></span>
+                            <input type="url" class="url-field" id="url" name="url" required
+                                   placeholder="https://soundcloud.com/..." />
+                            <button class="start-btn" type="submit" id="submit-button">
+                                <span class="start-label">Start</span>
+                                <i class="fas fa-arrow-right start-arrow"></i>
+                                <span class="btn-ripple"></span>
+                            </button>
                         </div>
-                        <input type="url" class="form-control bg-transparent border-0 text-white p-4 fs-5" 
-                               id="url" name="url" required placeholder="https://..." autocomplete="off">
-                        <button class="btn btn-action p-4 fw-bold text-uppercase" type="submit" id="submit-button">
-                            Start <i class="fas fa-arrow-right ms-2"></i>
-                        </button>
                     </div>
 
-                    <!-- Detected Platform & Options Slide-Down -->
-                    <div id="detection-area" class="mt-4 transition-all" style="opacity: 0; transform: translateY(-10px);">
-                        
-                        <!-- Badge -->
-                        <span class="badge glass-badge px-3 py-2 rounded-pill mb-3">
-                            <i id="detected-icon" class="fas fa-check me-2"></i>
+                    <!-- Platform detection -->
+                    <div id="detection-area" class="detection-area">
+                        <div class="platform-badge" id="platform-badge">
+                            <span class="platform-pulse" id="platform-pulse"></span>
+                            <i id="detected-icon" class="fab fa-soundcloud"></i>
                             <span id="detected-text">SoundCloud detected</span>
-                        </span>
+                        </div>
 
-                        <!-- Dynamic Options -->
-                        <div id="options-container" class="options-drawer mx-auto text-start text-white">
-                            
-                            <!-- YouTube Options -->
-                            <div id="youtube-options" class="d-none option-group">
-                                <div class="row g-4 justify-content-center">
-                                    <div class="col-auto">
-                                        <label class="text-white-50 small text-uppercase fw-bold mb-2 d-block">Format</label>
+                        <!-- Options drawer -->
+                        <div id="options-container" class="options-container">
+                            <!-- YouTube -->
+                            <div id="youtube-options" class="d-none option-block">
+                                <div class="d-flex gap-4 justify-content-center flex-wrap">
+                                    <div class="option-col">
+                                        <div class="option-label">Format</div>
                                         <div class="switch-toggle">
                                             <input type="radio" name="yt_format" id="format-mp3" value="mp3" checked>
                                             <label for="format-mp3">MP3</label>
                                             <input type="radio" name="yt_format" id="format-mp4" value="mp4">
                                             <label for="format-mp4">MP4</label>
-                                            <div class="toggle-bg"></div>
+                                            <div class="toggle-pill"></div>
                                         </div>
                                     </div>
-                                    <div class="col-auto" id="quality-wrapper">
-                                        <label class="text-white-50 small text-uppercase fw-bold mb-2 d-block">Quality</label>
-                                        <select class="form-select glass-select" id="mp3_bitrate" name="mp3_bitrate">
-                                            <option>Best</option><option selected>192k</option><option>128k</option>
+                                    <div class="option-col" id="quality-wrapper">
+                                        <div class="option-label">Quality</div>
+                                        <select class="glass-select" id="mp3_bitrate" name="mp3_bitrate">
+                                            <option>Best</option>
+                                            <option selected>192k</option>
+                                            <option>128k</option>
+                                            <option>64k</option>
                                         </select>
-                                        <select class="form-select glass-select d-none" id="mp4_quality" name="mp4_quality">
-                                            <option selected>Best</option><option>Medium</option><option>Low</option>
+                                        <select class="glass-select d-none" id="mp4_quality" name="mp4_quality">
+                                            <option selected>Best</option>
+                                            <option>Medium (~720p)</option>
+                                            <option>Low (~480p)</option>
                                         </select>
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- Codec Options -->
-                            <div id="codec-options-section" class="d-none option-group mt-3 text-center">
-                                <div class="d-inline-flex align-items-center glass-panel px-3 py-2 rounded">
-                                    <span class="text-white-50 small me-3">Compatibility (H.264)</span>
-                                    <div class="form-check form-switch m-0">
-                                        <input class="form-check-input custom-switch" type="checkbox" role="switch" id="codec-switch">
+                            <!-- Codec -->
+                            <div id="codec-options-section" class="d-none option-block text-center">
+                                <div class="codec-row">
+                                    <span class="option-label me-3">H.264 Compatibility</span>
+                                    <label class="toggle-switch">
+                                        <input class="ts-input" type="checkbox" role="switch" id="codec-switch">
+                                        <span class="ts-track"><span class="ts-thumb"></span></span>
                                         <input type="hidden" name="codec_preference" id="codec_preference" value="original">
-                                    </div>
+                                    </label>
                                 </div>
                             </div>
-
                         </div>
                     </div>
 
-                    <!-- Error Alert -->
-                    <div id="error-message" class="alert glass-alert mt-4 d-none text-danger fw-bold" role="alert"></div>
+                    <!-- Error -->
+                    <div id="error-message" class="error-alert d-none" role="alert"></div>
                 </form>
             </div>
 
-            <!-- Processing / Terminal View (Hidden initially) -->
-            <div id="process-view" class="d-none w-100 max-w-lg mx-auto mt-5">
-                
-                <!-- Main Status -->
-                <h3 id="status-message" class="text-white fw-bold mb-3 tracking-wide">INITIALIZING...</h3>
-                
-                <!-- Progress Bar -->
-                <div class="progress glass-progress mb-4">
-                    <div id="progress-bar" class="progress-bar bg-primary-gradient" style="width: 0%"></div>
+            <!-- Processing view -->
+            <div id="process-view" class="d-none process-view">
+                <div class="process-header">
+                    <h3 id="status-message" class="status-msg">INITIALIZING...</h3>
+                    <span id="progress-pct" class="progress-pct">0%</span>
                 </div>
-
-                <!-- CLI Log Window -->
-                <div class="terminal-window glass-panel text-start p-3 font-monospace small">
-                    <div class="terminal-header d-flex gap-2 mb-2 opacity-50">
-                        <div class="dot bg-danger"></div>
-                        <div class="dot bg-warning"></div>
-                        <div class="dot bg-success"></div>
-                        <span class="ms-2">worker@unknown-dl:~# process_task</span>
+                <div class="progress-track">
+                    <div id="progress-bar" class="progress-fill" style="width:0%"></div>
+                </div>
+                <div class="terminal-window">
+                    <div class="terminal-bar">
+                        <span class="tdot tdot-r"></span>
+                        <span class="tdot tdot-y"></span>
+                        <span class="tdot tdot-g"></span>
+                        <span class="tbar-label">worker@unknown-dl ~ process</span>
                     </div>
-                    <div id="pseudo-log-content" class="terminal-body text-primary-light">
-                        <!-- Logs typing here -->
-                    </div>
+                    <div id="pseudo-log-content" class="terminal-body"></div>
                 </div>
             </div>
 
-            <!-- Result View -->
-            <div id="result-view" class="d-none mt-5">
-                <div class="result-card glass-panel p-5 d-inline-block rounded-4">
-                    <div class="icon-circle bg-success-soft mb-3 mx-auto">
-                        <i class="fas fa-check text-success fs-2"></i>
+            <!-- Result view -->
+            <div id="result-view" class="d-none result-view">
+                <div class="result-card">
+                    <div class="result-icon-wrap success-ripple">
+                        <div class="result-icon">
+                            <i class="fas fa-check"></i>
+                        </div>
                     </div>
-                    <h2 class="text-white fw-bold mb-1">Done!</h2>
-                    <p class="text-white-50 mb-4">Your file is ready.</p>
-                    
-                    <a id="result-url" href="#" target="_blank" class="btn btn-primary-glow btn-lg px-5 rounded-pill fw-bold">
-                        <i class="fas fa-download me-2"></i> Download
+                    <h2 class="result-title">Done!</h2>
+                    <p class="result-sub">Your file is ready to download.</p>
+                    <a id="result-url" href="#" target="_blank" class="btn-download">
+                        <i class="fas fa-download me-2"></i>Download
                     </a>
-                    
-                    <div class="mt-4">
-                        <button class="btn btn-link text-white-50 text-decoration-none btn-sm" onclick="location.reload()">
-                            <i class="fas fa-redo me-1"></i> Convert another
+                    <div class="result-retry">
+                        <button class="btn-retry" onclick="location.reload()">
+                            <i class="fas fa-rotate-left me-1"></i>Convert another
                         </button>
                     </div>
                 </div>
@@ -166,32 +180,35 @@
     <!-- History Modal -->
     <div class="modal fade" id="historyModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content glass-modal border-0">
-                <div class="modal-header border-bottom-white-10">
-                    <h5 class="modal-title text-white fw-bold">History (Local)</h5>
+            <div class="modal-content glass-modal">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title">History</h5>
+                        <p class="modal-hint">Stored locally in your browser · 7 days</p>
+                    </div>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-0">
-                    <div class="table-responsive" style="max-height: 50vh;">
-                        <table class="table table-dark table-hover mb-0 bg-transparent align-middle" id="history-table">
+                    <div class="table-responsive" style="max-height: 55vh;">
+                        <table class="history-table" id="history-table">
                             <thead>
-                                <tr class="text-white-50 small text-uppercase">
+                                <tr>
                                     <th class="ps-4">Time</th>
-                                    <th class="text-center">Type</th>
+                                    <th>Platform</th>
                                     <th>Title</th>
                                     <th class="text-center">Source</th>
-                                    <th class="text-end pe-4">Download</th>
+                                    <th class="text-end pe-4">File</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <!-- JS Fills this -->
-                            </tbody>
+                            <tbody></tbody>
                         </table>
                     </div>
                 </div>
-                <div class="modal-footer border-top-white-10 justify-content-between">
-                    <button id="clear-history-button" class="btn btn-outline-danger btn-sm rounded-pill">Clear all</button>
-                    <small class="text-white-50">Saved in browser for 7 days</small>
+                <div class="modal-footer">
+                    <button id="clear-history-button" class="btn-clear-history">
+                        <i class="fas fa-trash-can me-1"></i>Clear all
+                    </button>
+                    <span class="modal-footer-hint">Your data never leaves this browser</span>
                 </div>
             </div>
         </div>
