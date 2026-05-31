@@ -94,7 +94,10 @@ logging.info(f"Maximale Worker-Threads (für Hintergrundverarbeitung): {MAX_WORK
 
 # --- Flask App Initialisierung ---
 app = Flask(__name__)
-app.secret_key = os.urandom(24)
+_secret_key = os.getenv('SECRET_KEY')
+if not _secret_key:
+    raise RuntimeError("SECRET_KEY Umgebungsvariable muss gesetzt sein (z.B. in .env).")
+app.secret_key = _secret_key
 
 limiter = Limiter(
     get_remote_address,
@@ -774,11 +777,26 @@ def sitemap_xml():
 @app.route('/start_download', methods=['POST'])
 @limiter.limit("5 per minute")
 def start_download():
-    url = request.form.get('url'); platform = request.form.get('platform', DEFAULT_PLATFORM)
-    yt_format = request.form.get('yt_format', DEFAULT_YT_FORMAT); mp3_bitrate = request.form.get('mp3_bitrate', DEFAULT_MP3_BITRATE)
+    url = request.form.get('url')
+    platform = request.form.get('platform', DEFAULT_PLATFORM)
+    yt_format = request.form.get('yt_format', DEFAULT_YT_FORMAT)
+    mp3_bitrate = request.form.get('mp3_bitrate', DEFAULT_MP3_BITRATE)
     mp4_quality = request.form.get('mp4_quality', DEFAULT_MP4_QUALITY)
     codec_preference = request.form.get('codec_preference', 'original')
 
+    # Allowlist-Validierung der Enum-Parameter (Vuln 3)
+    if platform not in SUPPORTED_PLATFORMS:
+        return jsonify({"error": f"Unbekannte Plattform: {platform}"}), 400
+    if yt_format not in ('mp3', 'mp4'):
+        return jsonify({"error": "Ungültiges Format."}), 400
+    if mp3_bitrate not in MP3_BITRATES:
+        return jsonify({"error": "Ungültige Bitrate."}), 400
+    if mp4_quality not in MP4_QUALITIES:
+        return jsonify({"error": "Ungültige Qualitätsstufe."}), 400
+    if codec_preference not in ('original', 'h264'):
+        return jsonify({"error": "Ungültige Codec-Einstellung."}), 400
+
+    # URL-Validierung: nur bekannte Domains erlaubt, kein Fallback auf beliebige URLs (Vuln 1)
     is_valid_url = False
     if url and url.startswith(("http://", "https://")):
         parsed_url = urllib.parse.urlparse(url)
@@ -789,9 +807,6 @@ def start_download():
         elif platform == "TikTok" and _domain_matches(domain, "tiktok.com"): is_valid_url = True
         elif platform == "Instagram" and _domain_matches(domain, "instagram.com") and ("/reel/" in path or "/p/" in path): is_valid_url = True
         elif platform == "Twitter" and (_domain_matches(domain, "twitter.com") or _domain_matches(domain, "x.com")) and "/status/" in path: is_valid_url = True
-        elif platform not in SUPPORTED_PLATFORMS:
-             logging.warning(f"Unbekannte Plattform '{platform}' angegeben, versuche trotzdem mit URL '{url}'")
-             is_valid_url = True
 
     if not is_valid_url:
         error_msg = f"Ungültige URL für {platform}."
