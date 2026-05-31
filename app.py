@@ -14,6 +14,8 @@ import random
 import string
 import re
 from flask import Flask, render_template, request, jsonify, Response, copy_current_request_context, make_response
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import time
 # import queue # ALT
 import multiprocessing # NEU: Für prozessübergreifende Queue
@@ -94,6 +96,13 @@ logging.info(f"Maximale Worker-Threads (für Hintergrundverarbeitung): {MAX_WORK
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=[],
+    storage_uri="memory://",
+)
+
 # --- Globaler Status -> Job-Status Speicher ---
 manager = multiprocessing.Manager()
 job_statuses = manager.dict()
@@ -115,6 +124,9 @@ def generate_s3_object_name(extension):
 
 def strip_ansi_codes(text):
     return ANSI_ESCAPE_REGEX.sub('', text)
+
+def _domain_matches(domain, expected):
+    return domain == expected or domain.endswith("." + expected)
 
 def format_size(size_bytes):
    if size_bytes == 0: return "0 B"
@@ -760,8 +772,8 @@ def sitemap_xml():
     return resp
 
 @app.route('/start_download', methods=['POST'])
+@limiter.limit("5 per minute")
 def start_download():
-    # (Logik unverändert)
     url = request.form.get('url'); platform = request.form.get('platform', DEFAULT_PLATFORM)
     yt_format = request.form.get('yt_format', DEFAULT_YT_FORMAT); mp3_bitrate = request.form.get('mp3_bitrate', DEFAULT_MP3_BITRATE)
     mp4_quality = request.form.get('mp4_quality', DEFAULT_MP4_QUALITY)
@@ -770,13 +782,13 @@ def start_download():
     is_valid_url = False
     if url and url.startswith(("http://", "https://")):
         parsed_url = urllib.parse.urlparse(url)
-        domain = parsed_url.netloc.lower()
+        domain = parsed_url.netloc.lower().split(":")[0]  # Port abschneiden
         path = parsed_url.path.lower()
-        if platform == "SoundCloud" and "soundcloud.com" in domain: is_valid_url = True
-        elif platform == "YouTube" and ("youtube.com" in domain or "youtu.be" in domain): is_valid_url = True
-        elif platform == "TikTok" and "tiktok.com" in domain: is_valid_url = True
-        elif platform == "Instagram" and "instagram.com" in domain and ("/reel/" in path or "/p/" in path): is_valid_url = True
-        elif platform == "Twitter" and ("twitter.com" in domain or "x.com" in domain) and "/status/" in path: is_valid_url = True
+        if platform == "SoundCloud" and _domain_matches(domain, "soundcloud.com"): is_valid_url = True
+        elif platform == "YouTube" and (_domain_matches(domain, "youtube.com") or _domain_matches(domain, "youtu.be")): is_valid_url = True
+        elif platform == "TikTok" and _domain_matches(domain, "tiktok.com"): is_valid_url = True
+        elif platform == "Instagram" and _domain_matches(domain, "instagram.com") and ("/reel/" in path or "/p/" in path): is_valid_url = True
+        elif platform == "Twitter" and (_domain_matches(domain, "twitter.com") or _domain_matches(domain, "x.com")) and "/status/" in path: is_valid_url = True
         elif platform not in SUPPORTED_PLATFORMS:
              logging.warning(f"Unbekannte Plattform '{platform}' angegeben, versuche trotzdem mit URL '{url}'")
              is_valid_url = True
@@ -912,6 +924,10 @@ def start_background_threads():
 
     _threads_started_globally = True
     logging.info(f"Hintergrund-Threads global gestartet ({len(_background_threads)} Threads).")
+
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    return jsonify({"error": "Zu viele Anfragen. Bitte warte eine Minute."}), 429
 
 start_background_threads()
 
